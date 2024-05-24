@@ -16,8 +16,12 @@ async function testWebTransport() {
   // Create a bidirectional stream
   let stream = await transport.createBidirectionalStream();
 
+  let testMessageJson = { message_type: "board_memberadded" };
+
   // Send data from the client to the server
-  await stream.writable.getWriter().write(new TextEncoder().encode("hello"));
+  await stream.writable
+    .getWriter()
+    .write(new TextEncoder().encode(JSON.stringify(testMessageJson)));
 
   // Read data reply from the server
   let data = await stream.readable.getReader().read();
