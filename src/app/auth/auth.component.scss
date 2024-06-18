@@ -1,0 +1,38 @@
+@import '../../styles/colors';
+
+:host {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.form-container {
+  height: 300px;
+  width: 500px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: $primary 3px solid;
+  border-radius: 10px;
+  padding: 30px;
+  flex-direction: column;
+  background-color: $secondary;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-title {
+  color: $primary;
+}
+
+.submit-button {
+  display: flex;
+  width: 50%;
+  align-self: center;
+  margin: 10px 10px 20px 10px;
+}
