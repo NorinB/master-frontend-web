@@ -2,9 +2,11 @@ import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, Routes } from '@an
 import { AuthComponent } from './auth/auth.component';
 import { BoardSelectionComponent } from './board-selection/board-selection.component';
 import { inject } from '@angular/core';
-import { AuthService } from './auth/auth.service';
+import { AuthService } from './shared/auth/auth.service';
 import { Observable, tap } from 'rxjs';
-import { LoggedInUser } from './auth/auth.models';
+import { LoggedInUser } from './shared/auth/auth.model';
+import { BoardComponent } from './board/board.component';
+import { BoardService } from './shared/board/board.service';
 
 export const routes: Routes = [
   {
@@ -20,7 +22,32 @@ export const routes: Routes = [
     component: BoardSelectionComponent,
     canActivate: [checkIfLoggedIn],
   },
+  {
+    path: 'board/:boardId',
+    component: BoardComponent,
+    canActivate: [checkIfLoggedIn, checkIfPartOfBoard],
+  },
 ];
+
+function checkIfPartOfBoard(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> | boolean {
+  if (!route.params['boardId']) {
+    return false;
+  }
+  const boardService = inject(BoardService);
+  const router = inject(Router);
+  try {
+    return boardService.userIsPartOfBoard(route.params['boardId']).pipe(
+      tap((isPart) => {
+        if (!isPart) {
+          router.navigate(['board-selection']);
+        }
+      }),
+    );
+  } catch (e) {
+    console.log(e);
+    return false;
+  }
+}
 
 function checkIfLoggedIn(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> | boolean {
   const authService = inject(AuthService);

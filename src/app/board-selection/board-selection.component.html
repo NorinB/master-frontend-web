@@ -6,9 +6,27 @@
   <div class="board-list-container">
     <div class="board-list">
       @for (board of boards(); track $index) {
-        <div class="board-list-item">{{ board.name }}</div>
+        <div class="board-list-item">
+          <div>
+            <p class="board-list-item-name">{{ board.name }}</p>
+            <p class="board-list-item-member-count">Mitglieder: {{ board.allowedMembers.length }}</p>
+            <p class="board-list-item-active-member-count">
+              Aktive Teilnehmende:
+              <!-- TODO: hier noch die Anzahl der aktiven Mitglieder anzeigen -->
+            </p>
+          </div>
+          <span class="spacer"></span>
+          <button mat-mini-fab (click)="enterBoard(board._id)">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+        </div>
+        @if ($index !== boards().length - 1) {
+          <hr class="board-list-item-separator" />
+        }
       }
     </div>
   </div>
 }
-<!-- TODO: Hier board erstellen und beitreten implementiueren -->
+<button mat-fab class="create-board-button" (click)="createBoard()">
+  <mat-icon>add</mat-icon>
+</button>

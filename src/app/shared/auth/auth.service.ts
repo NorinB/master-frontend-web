@@ -1,5 +1,5 @@
 import { Injectable, Signal, WritableSignal, signal } from '@angular/core';
-import { environment } from '../../environments/environment';
+import { environment } from '../../../environments/environment';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { StatusCodes } from 'http-status-codes';
 import {
@@ -10,8 +10,8 @@ import {
   UserNameInvalidError,
   UserNotFoundError,
 } from './auth.error';
-import { UnexpectedApiError } from '../shared/error';
-import { LoggedInUser, DeviceType, mapDeviceTypeToString } from './auth.models';
+import { UnexpectedApiError } from '../general.error';
+import { LoggedInUser, DeviceType, mapDeviceTypeToString } from './auth.model';
 import { v4 as uuidv4 } from 'uuid';
 import { Observable, of, switchMap } from 'rxjs';
 import { Router } from '@angular/router';
@@ -100,10 +100,7 @@ export class AuthService {
           return;
         }
       } catch (e) {
-        let errorResponse = e as HttpErrorResponse;
-        if (errorResponse.status === StatusCodes.INTERNAL_SERVER_ERROR) {
-          throw new UnexpectedApiError();
-        }
+        throw new UnexpectedApiError();
       }
     }
     const clientId = uuidv4();
@@ -175,7 +172,6 @@ export class AuthService {
     if (!storedUserJson) {
       throw new NotLoggedInError();
     }
-    console.log(storedUserJson.id);
     try {
       await this.http.delete(`${this.apiBaseUrl}/logout/${storedUserJson.id}`, { observe: 'response' }).toPromise();
       localStorage.removeItem('user');

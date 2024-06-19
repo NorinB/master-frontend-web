@@ -1,0 +1,15 @@
+<mat-dialog-content>
+  <h3>Board erstellen</h3>
+  <p>Gib den Boardnamen an:</p>
+  <mat-form-field>
+    <mat-label>Boardname</mat-label>
+    <input matInput [(ngModel)]="boardName" required (keydown.enter)="onSubmit()" (submit)="onSubmit()" />
+  </mat-form-field>
+  @if (nameEmpty()) {
+    <p class="error-message">Bitte gib einen Namen an</p>
+  }
+</mat-dialog-content>
+<mat-dialog-actions>
+  <button mat-button (click)="onCancel()">Abbrechen</button>
+  <button mat-flat-button (click)="onSubmit()">Erstellen</button>
+</mat-dialog-actions>

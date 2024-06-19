@@ -1,10 +1,10 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { User } from './models/user.model';
-import { environment } from '../../environments/environment';
+import { User } from './user.model';
+import { environment } from '../../../environments/environment';
 import { StatusCodes } from 'http-status-codes';
 import { UserNotFoundError } from '../auth/auth.error';
-import { UnexpectedApiError } from './error';
+import { UnexpectedApiError } from '../general.error';
 
 @Injectable({
   providedIn: 'root',

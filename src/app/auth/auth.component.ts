@@ -4,10 +4,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { Router } from '@angular/router';
-import { AuthService } from './auth.service';
+import { AuthService } from '../shared/auth/auth.service';
 import { AppbarService } from '../shared/title.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { defaultSnackbarConfig } from '../shared/snackbar-config';
+import { UnauthorizedError, UserNotFoundError } from '../shared/auth/auth.error';
 
 @Component({
   selector: 'auth',
@@ -48,7 +49,6 @@ export class AuthComponent {
     if (this.isRegistration) {
       const email: string = this.formGroup.get('email')!.value!;
       try {
-        console.log(email, nameOrEmail, password);
         await this.authService.register(email, nameOrEmail, password);
       } catch (e) {
         console.log(e);
@@ -62,11 +62,16 @@ export class AuthComponent {
       const name = isEmail ? null : nameOrEmail;
       try {
         await this.authService.login(email, name, password);
+        this.snackBar.open('Eingeloggt 🎉', undefined, defaultSnackbarConfig());
       } catch (e) {
         console.log(e);
+        if (e instanceof UnauthorizedError || e instanceof UserNotFoundError) {
+          this.snackBar.open('Login falsch ❌', undefined, defaultSnackbarConfig());
+        } else {
+          this.snackBar.open('Login fehlgeschlagen', undefined, defaultSnackbarConfig());
+        }
         return;
       } finally {
-        this.snackBar.open('Eingeloggt 🎉', undefined, defaultSnackbarConfig());
         this.loading = false;
       }
     }

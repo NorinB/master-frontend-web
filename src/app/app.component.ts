@@ -5,11 +5,11 @@ import { AppbarService } from './shared/title.service';
 import { AsyncPipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { AuthService } from './auth/auth.service';
+import { AuthService } from './shared/auth/auth.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { UnexpectedApiError } from './shared/error';
+import { UnexpectedApiError } from './shared/general.error';
 import { defaultSnackbarConfig } from './shared/snackbar-config';
-import { NotLoggedInError } from './auth/auth.error';
+import { NotLoggedInError } from './shared/auth/auth.error';
 
 @Component({
   selector: 'app-root',
