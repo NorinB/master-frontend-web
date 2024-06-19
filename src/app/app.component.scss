@@ -1,1 +1,10 @@
+@import "../styles/colors.scss";
 
+.appbar-title {
+  color: $primary;
+}
+
+.spacer {
+  display: flex;
+  flex: 1 1 auto;
+}

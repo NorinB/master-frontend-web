@@ -1,1 +1,16 @@
+<mat-toolbar>
+  <span class="appbar-title">{{ appbarService.title() }}</span>
+  <span class="spacer"></span>
+  @for (action of appbarService.actions(); track $index) {
+    <button mat-icon-button (click)="action.action()">
+      <mat-icon>{{ action.icon }}</mat-icon>
+    </button>
+  }
+  @if (authService.user()) {
+    <button mat-icon-button (click)="logout()">
+      <mat-icon>logout</mat-icon>
+    </button>
+  }
+</mat-toolbar>
+
 <router-outlet />

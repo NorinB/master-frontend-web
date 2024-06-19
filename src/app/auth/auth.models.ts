@@ -1,3 +1,11 @@
+export interface LoggedInUser {
+  id: string;
+  email: string;
+  name: string;
+  clientId: string;
+  deviceType: DeviceType;
+}
+
 export enum DeviceType {
   Web,
   Android,

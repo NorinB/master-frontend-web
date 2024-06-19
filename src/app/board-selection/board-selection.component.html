@@ -1,1 +1,14 @@
-<p>board-selection works!</p>
+@if (boards().length === 0) {
+  <div class="empty-container">
+    <span class="empty-text">Du bist in noch keinem Board dabei...</span>
+  </div>
+} @else {
+  <div class="board-list-container">
+    <div class="board-list">
+      @for (board of boards(); track $index) {
+        <div class="board-list-item">{{ board.name }}</div>
+      }
+    </div>
+  </div>
+}
+<!-- TODO: Hier board erstellen und beitreten implementiueren -->

@@ -7,14 +7,24 @@
     }
   </h2>
   <form (ngSubmit)="onSubmit()" [formGroup]="formGroup" class="form">
-    <!-- TODO:  add registration input fields -->
+    @if (isRegistration) {
+      <mat-form-field>
+        <mat-label>E-Mail</mat-label>
+        <input matInput formControlName="email" />
+      </mat-form-field>
+    }
     <mat-form-field>
-      <mat-label>Name oder E-Mail</mat-label>
+      <mat-label
+        >Name
+        @if (isRegistration) {
+          oder E-Mail
+        }
+      </mat-label>
       <input matInput formControlName="nameOrEmail" />
     </mat-form-field>
     <mat-form-field>
       <mat-label>Passwort</mat-label>
-      <input matInput formControlName="password" />
+      <input matInput type="password" formControlName="password" />
     </mat-form-field>
     <button class="submit-button" mat-flat-button type="submit">
       @if (isRegistration) {

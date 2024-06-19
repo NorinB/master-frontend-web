@@ -1,0 +1,12 @@
+:host {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.empty-text {
+  font-size: 24pt;
+  font-style: italic;
+  color: lightgray;
+}

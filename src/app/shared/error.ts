@@ -3,3 +3,9 @@ export class UnexpectedApiError extends Error {
     super(message);
   }
 }
+
+export class UserNotPartOfAnyBoardError extends Error {
+  constructor(message = 'User nimmt an keinem Board Teil') {
+    super(message);
+  }
+}

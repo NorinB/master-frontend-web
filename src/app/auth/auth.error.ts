@@ -15,3 +15,21 @@ export class UnauthorizedError extends Error {
     super(message);
   }
 }
+
+export class UserNameInvalidError extends Error {
+  constructor(message = 'Nutzername darf kein "@" enthalten') {
+    super(message);
+  }
+}
+
+export class InvalidStoredCredentialsError extends Error {
+  constructor(message = 'Gespeicherte Session ist ungültig') {
+    super(message);
+  }
+}
+
+export class NotLoggedInError extends Error {
+  constructor(message = 'Nicht eingeloggt') {
+    super(message);
+  }
+}
