@@ -3,6 +3,7 @@ import { environment } from '../../../environments/environment';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { StatusCodes } from 'http-status-codes';
 import {
+  CredentialsNotSufficientError,
   InvalidStoredCredentialsError,
   NotLoggedInError,
   UnauthorizedError,
@@ -92,7 +93,11 @@ export class AuthService {
   }
 
   public async login(email: string | null, name: string | null, password: string): Promise<void> {
+    if ((!email && !name) || !password) {
+      throw new CredentialsNotSufficientError();
+    }
     const storedUserJson = this.getValidStoredUser();
+    console.log(storedUserJson);
     if (storedUserJson) {
       try {
         const getClientResponse = await this.http.get(`${this.apiBaseUrl}/client/${storedUserJson.id}`, { observe: 'response' }).toPromise();
@@ -105,6 +110,7 @@ export class AuthService {
     }
     const clientId = uuidv4();
     try {
+      console.log(`Jetzt einloggen mit: E-Mail: ${email}, Name: ${name}, Password: ${password}, ClientId: ${clientId}`);
       const loginResponse = await this.http
         .post<{
           email: string;
@@ -143,6 +149,9 @@ export class AuthService {
   }
 
   public async register(email: string, name: string, password: string): Promise<void> {
+    if (!email || !name || !password) {
+      throw new CredentialsNotSufficientError();
+    }
     try {
       await this.http
         .post<{

@@ -1,0 +1,15 @@
+<mat-dialog-content>
+  <h3>Board erstellen</h3>
+  <p>Gib den Namen oder E-Mail des Teilnehmenden an:</p>
+  <mat-form-field>
+    <mat-label>Name oder E-Mail</mat-label>
+    <input matInput [(ngModel)]="nameOrEmail" required (keydown.enter)="onSubmit()" (submit)="onSubmit()" />
+  </mat-form-field>
+  @if (nameEmpty()) {
+    <p class="error-message">Bitte gib einen Namen oder eine E-Mail an</p>
+  }
+</mat-dialog-content>
+<mat-dialog-actions>
+  <button mat-button (click)="onCancel()">Abbrechen</button>
+  <button mat-flat-button (click)="onSubmit()">Erstellen</button>
+</mat-dialog-actions>

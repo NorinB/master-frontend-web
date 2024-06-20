@@ -1,5 +1,5 @@
 import { Component, OnInit, WritableSignal, signal } from '@angular/core';
-import { AppbarService } from '../shared/title.service';
+import { AppbarService } from '../shared/appbar.service';
 import { BoardService } from '../shared/board/board.service';
 import { Board } from '../shared/board/board.model';
 import { MatSnackBar } from '@angular/material/snack-bar';

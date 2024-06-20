@@ -16,6 +16,12 @@ export class UnauthorizedError extends Error {
   }
 }
 
+export class CredentialsNotSufficientError extends Error {
+  constructor(message = 'Angaben nicht vollständig') {
+    super(message);
+  }
+}
+
 export class UserNameInvalidError extends Error {
   constructor(message = 'Nutzername darf kein "@" enthalten') {
     super(message);

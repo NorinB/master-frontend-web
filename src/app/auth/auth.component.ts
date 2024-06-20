@@ -5,10 +5,10 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { Router } from '@angular/router';
 import { AuthService } from '../shared/auth/auth.service';
-import { AppbarService } from '../shared/title.service';
+import { AppbarService } from '../shared/appbar.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { defaultSnackbarConfig } from '../shared/snackbar-config';
-import { UnauthorizedError, UserNotFoundError } from '../shared/auth/auth.error';
+import { CredentialsNotSufficientError, UnauthorizedError, UserNotFoundError } from '../shared/auth/auth.error';
 
 @Component({
   selector: 'auth',
@@ -51,7 +51,8 @@ export class AuthComponent {
       try {
         await this.authService.register(email, nameOrEmail, password);
       } catch (e) {
-        console.log(e);
+        const error = e as Error;
+        this.snackBar.open(error.message, 'Ok', defaultSnackbarConfig());
         return;
       } finally {
         this.loading = false;
@@ -67,6 +68,8 @@ export class AuthComponent {
         console.log(e);
         if (e instanceof UnauthorizedError || e instanceof UserNotFoundError) {
           this.snackBar.open('Login falsch ❌', undefined, defaultSnackbarConfig());
+        } else if (e instanceof CredentialsNotSufficientError) {
+          this.snackBar.open(e.message, 'Ok', defaultSnackbarConfig());
         } else {
           this.snackBar.open('Login fehlgeschlagen', undefined, defaultSnackbarConfig());
         }

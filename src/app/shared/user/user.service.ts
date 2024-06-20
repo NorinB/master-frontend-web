@@ -29,4 +29,33 @@ export class UserService {
       }
     }
   }
+
+  public async getUserByNameOrEmail(nameOrEmail: string): Promise<User> {
+    let isEmail = false;
+    if (nameOrEmail.includes('@')) {
+      isEmail = true;
+    }
+    try {
+      let url: string = `${this.apiBaseUrl}/user`;
+      if (isEmail) {
+        url += `?email=${nameOrEmail}`;
+      } else {
+        url += `?name=${nameOrEmail}`;
+      }
+      const foundUsers = (await this.http.get<User[]>(url, { observe: 'response' }).toPromise())!.body!;
+      if (foundUsers.length !== 1) {
+        throw new UserNotFoundError();
+      }
+      return foundUsers[0];
+    } catch (e) {
+      const errorResponse = e as HttpErrorResponse;
+      switch (errorResponse.status) {
+        case StatusCodes.NOT_FOUND:
+          throw new UserNotFoundError();
+        default: {
+          throw new UnexpectedApiError();
+        }
+      }
+    }
+  }
 }
