@@ -25,7 +25,11 @@
       "ES2022",
       "dom"
     ],
-    "rootDir": "./src"
+    "paths": {
+      "wasm-webtransport": [
+        "./projects/wasm-webtransport/src/public-api.ts"
+      ]
+    }
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

@@ -1,4 +1,4 @@
-import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, Routes } from '@angular/router';
+import { ActivatedRouteSnapshot, GuardResult, MaybeAsync, Router, RouterStateSnapshot, Routes } from '@angular/router';
 import { AuthComponent } from './auth/auth.component';
 import { BoardSelectionComponent } from './board-selection/board-selection.component';
 import { inject } from '@angular/core';
@@ -7,6 +7,7 @@ import { Observable, tap } from 'rxjs';
 import { LoggedInUser } from './shared/auth/auth.model';
 import { BoardComponent } from './board/board.component';
 import { BoardService } from './shared/board/board.service';
+import { ActiveMemberService } from './shared/active-member/active-member.service';
 
 export const routes: Routes = [
   {
@@ -26,8 +27,23 @@ export const routes: Routes = [
     path: 'board/:boardId',
     component: BoardComponent,
     canActivate: [checkIfLoggedIn, checkIfPartOfBoard],
+    canDeactivate: [removeActiveMemberember],
   },
 ];
+
+function removeActiveMemberember(
+  _: any,
+  currentRoute: ActivatedRouteSnapshot,
+  currentState: RouterStateSnapshot,
+  nextState: RouterStateSnapshot,
+): MaybeAsync<GuardResult> {
+  const activeMemberService = inject(ActiveMemberService);
+  try {
+    activeMemberService.leaveBoardAsActiveMember();
+  } finally {
+    return true;
+  }
+}
 
 function checkIfPartOfBoard(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> | boolean {
   if (!route.params['boardId']) {

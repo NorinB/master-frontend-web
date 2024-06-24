@@ -13,6 +13,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { CreateBoardDialogComponent } from './create-board-dialog/create-board-dialog.component';
 import { take } from 'rxjs';
 import { UnexpectedApiError } from '../shared/general.error';
+import { ActiveMemberService } from '../shared/active-member/active-member.service';
 
 @Component({
   selector: 'board-selection',
@@ -28,6 +29,7 @@ export class BoardSelectionComponent implements OnInit {
     private appbarService: AppbarService,
     private authService: AuthService,
     private boardService: BoardService,
+    private activeMemberService: ActiveMemberService,
     private snackBar: MatSnackBar,
     private router: Router,
     private dialog: MatDialog,
@@ -65,7 +67,7 @@ export class BoardSelectionComponent implements OnInit {
         return;
       }
       if (board.allowedMembers.includes(userId)) {
-        this.boardService.joinBoard(board, userId);
+        await this.activeMemberService.joinBoardAsActiveMember(board, userId);
         this.router.navigate(['board', board._id]);
       } else {
         this.snackBar.open('User ist kein Teil von diesem Board', 'Ok', defaultSnackbarConfig());

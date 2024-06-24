@@ -1,6 +1,8 @@
 <mat-toolbar>
+  <!-- TODO: add backbutton here-->
   <span class="appbar-title">{{ appbarService.title() }}</span>
   <span class="spacer"></span>
+  <!-- TODO: add member list here, maybe with ng-template-->
   @for (action of appbarService.actions(); track $index) {
     <button mat-icon-button (click)="action.action()">
       <mat-icon>{{ action.icon }}</mat-icon>

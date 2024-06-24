@@ -5,7 +5,6 @@ import { environment } from '../../../environments/environment';
 import { AuthService } from '../auth/auth.service';
 import { StatusCodes } from 'http-status-codes';
 import { BoardNotFoundError, NotInABoardCurrentlyError, UserAlreadyPartOfThisBoardError, UserNotPartOfThisBoardError } from './board.error';
-import { ActiveMember } from '../active-member/active-member.model';
 import { NotLoggedInError } from '../auth/auth.error';
 import { UnexpectedApiError } from '../general.error';
 import { Observable, from, of, switchMap, take } from 'rxjs';
@@ -18,7 +17,6 @@ import { defaultSnackbarConfig } from '../snackbar-config';
 export class BoardService {
   private apiBaseUrl = environment.apiBaseUrl;
   public activeBoard: WritableSignal<Board | null> = signal(null);
-  public activeMember: WritableSignal<ActiveMember | null> = signal(null);
   public isHost: WritableSignal<boolean> = signal(false);
 
   constructor(
@@ -34,7 +32,6 @@ export class BoardService {
   public async getBoardsWithUser(): Promise<Board[]> {
     try {
       const response = await this.http.get(`${this.apiBaseUrl}/boards/${this.authService.user()!.id}`, { observe: 'response' }).toPromise();
-      console.log(response!.body);
       return response!.body as Board[];
     } catch (e) {
       const errorResponse = e as HttpErrorResponse;
@@ -109,27 +106,6 @@ export class BoardService {
           throw new BoardNotFoundError();
         case StatusCodes.CONFLICT:
           throw new UserNotPartOfThisBoardError();
-        default: {
-          throw new UnexpectedApiError();
-        }
-      }
-    }
-  }
-
-  //  TODO: hier noch adden, wenn die Seite verlassen wird, dass active member entfernt wird
-  public async joinBoard(board: Board, userId: string): Promise<void> {
-    try {
-      this.activeMember.set(
-        (await this.http.post<any>(`${this.apiBaseUrl}/active-member`, { userId: userId, boardId: board._id }, { observe: 'response' }).toPromise())!.body!,
-      );
-      this.activeBoard.set(board);
-    } catch (e) {
-      const errorResponse = e as HttpErrorResponse;
-      switch (errorResponse.status) {
-        case StatusCodes.FORBIDDEN:
-          throw new UserNotPartOfThisBoardError();
-        case StatusCodes.NOT_FOUND:
-          throw new BoardNotFoundError();
         default: {
           throw new UnexpectedApiError();
         }
