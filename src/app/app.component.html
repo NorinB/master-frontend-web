@@ -1,5 +1,9 @@
 <mat-toolbar>
-  <!-- TODO: add backbutton here-->
+  @if (appbarService.backAction()) {
+    <button mat-icon-button (click)="appbarService.backAction()!()">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+  }
   <span class="appbar-title">{{ appbarService.title() }}</span>
   <span class="spacer"></span>
   <!-- TODO: add member list here, maybe with ng-template-->

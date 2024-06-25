@@ -41,6 +41,7 @@ export class BoardSelectionComponent implements OnInit {
         action: this.updateBoardsWithUser.bind(this),
       },
     ]);
+    this.appbarService.setBackAction(null);
   }
 
   ngOnInit(): void {

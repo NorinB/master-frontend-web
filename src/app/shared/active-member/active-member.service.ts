@@ -54,9 +54,11 @@ export class ActiveMemberService {
       throw new NotLoggedInError();
     }
     try {
-      await this.http
-        .put(`${this.apiBaseUrl}/active-member/board`, { userId: this.authService.user()!.id, newBoardId: board!._id }, { observe: 'response' })
+      const response = await this.http
+        .put<any>(`${this.apiBaseUrl}/active-member/board`, { userId: this.authService.user()!.id, newBoardId: board!._id }, { observe: 'response' })
         .toPromise();
+      const activeMember = response!.body!;
+      this.activeMember.set(activeMember);
       this.boardService.setActiveBoard(board);
     } catch (e) {
       const errorResponse = e as HttpErrorResponse;
@@ -80,13 +82,14 @@ export class ActiveMemberService {
       throw new ActiveMemberNotFoundError();
     }
     try {
-      await this.http.delete(`${this.apiBaseUrl}/active-member/${this.activeMember()!._id}`, { observe: 'response' }).toPromise();
+      await this.http.delete(`${this.apiBaseUrl}/active-member/${this.activeMember()!.userId}`, { observe: 'response' }).toPromise();
       this.activeMember.set(null);
       this.boardService.setActiveBoard(null);
     } catch (e) {
       const errorResponse = e as HttpErrorResponse;
       switch (errorResponse.status) {
         case StatusCodes.NOT_FOUND:
+          this.activeMember.set(null);
           throw new ActiveMemberNotFoundError();
         default: {
           throw new UnexpectedApiError();

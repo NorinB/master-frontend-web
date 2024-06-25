@@ -3,15 +3,17 @@
 /**
 * @param {string} url
 * @param {Uint8Array} certificate_bytes
+* @param {string} event_category
+* @param {string} context_id
 * @returns {Promise<void>}
 */
-export function init_webtransport(url: string, certificate_bytes: Uint8Array): Promise<void>;
+export function init_webtransport(url: string, certificate_bytes: Uint8Array, event_category: string, context_id: string): Promise<void>;
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
-  readonly init_webtransport: (a: number, b: number, c: number, d: number) => number;
+  readonly init_webtransport: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => number;
   readonly __wbindgen_malloc: (a: number, b: number) => number;
   readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
   readonly __wbindgen_export_2: WebAssembly.Table;

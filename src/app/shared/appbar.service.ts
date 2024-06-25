@@ -11,7 +11,9 @@ export interface AppbarAction {
 export class AppbarService {
   title: WritableSignal<string> = signal('');
   actions: WritableSignal<AppbarAction[]> = signal([]);
-  backAction: WritableSignal<Function | null> = signal(null);
+  backAction: WritableSignal<(() => void) | null> = signal(null);
+
+  constructor() {}
 
   public updateTitle(title: string) {
     this.title.set(title);
@@ -21,7 +23,7 @@ export class AppbarService {
     this.actions.set(actions);
   }
 
-  public setBackAction(action: Function) {
+  public setBackAction(action: (() => void) | null) {
     this.backAction.set(action);
   }
 }

@@ -36,6 +36,7 @@ export class AuthComponent {
     this.formGroup.addControl('confirmedPassword', new FormControl('', [Validators.required, this.checkConfirmedPassword(this.formGroup)]));
     this.updateTitle('Login');
     this.appbarService.setActions([]);
+    this.appbarService.setBackAction(null);
   }
 
   private updateTitle(title: string): void {
