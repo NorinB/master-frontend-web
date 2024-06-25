@@ -1,18 +1,23 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
-* @param {number} num
-* @returns {string}
+* @param {string} url
+* @param {Uint8Array} certificate_bytes
+* @returns {Promise<void>}
 */
-export function get_factorial(num: number): string;
+export function init_webtransport(url: string, certificate_bytes: Uint8Array): Promise<void>;
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
-  readonly get_factorial: (a: number, b: number) => void;
-  readonly __wbindgen_add_to_stack_pointer: (a: number) => number;
-  readonly __wbindgen_free: (a: number, b: number, c: number) => void;
+  readonly init_webtransport: (a: number, b: number, c: number, d: number) => number;
+  readonly __wbindgen_malloc: (a: number, b: number) => number;
+  readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
+  readonly __wbindgen_export_2: WebAssembly.Table;
+  readonly _dyn_core__ops__function__FnMut__A____Output___R_as_wasm_bindgen__closure__WasmClosure___describe__invoke__ha03ebee3e9611b53: (a: number, b: number, c: number) => void;
+  readonly __wbindgen_exn_store: (a: number) => void;
+  readonly wasm_bindgen__convert__closures__invoke2_mut__h17d19052343a1b0d: (a: number, b: number, c: number, d: number) => void;
 }
 
 export type SyncInitInput = BufferSource | WebAssembly.Module;
