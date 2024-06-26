@@ -10,7 +10,7 @@ import { BoardNotFoundError, NotInABoardCurrentlyError, UserAlreadyPartOfThisBoa
 import { MatDialog } from '@angular/material/dialog';
 import { MemberAddDialogComponent } from './member-add-dialog/member-add-dialog.component';
 import { take } from 'rxjs';
-import { initWasm, init_webtransport } from 'wasm-webtransport';
+import { initWasm, WebTransportClient } from 'wasm-webtransport';
 import { Location } from '@angular/common';
 
 @Component({
@@ -96,7 +96,17 @@ export class BoardComponent implements OnInit {
 
   async initWasm(url: string, certificate: Uint8Array, eventCategory: string, contextId: string): Promise<void> {
     await initWasm();
-    init_webtransport(url, certificate, eventCategory, contextId);
+    const client = new WebTransportClient(url, certificate);
+    await client.init_session();
+    await client.connect_to_context(
+      // TODO: hier halt jetzt was gescheites machen mit dem Webtransport
+      eventCategory,
+      contextId,
+      (message) => {
+        console.log('Hier ist die Message in JavaScript', message);
+      },
+      this,
+    );
   }
 
   private async addMember(nameOrEmail: string): Promise<void> {

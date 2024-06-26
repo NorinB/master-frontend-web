@@ -1,19 +1,70 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
+*/
+export class WebTransportClient {
+  free(): void;
+/**
 * @param {string} url
 * @param {Uint8Array} certificate_bytes
-* @param {string} event_category
-* @param {string} context_id
+*/
+  constructor(url: string, certificate_bytes: Uint8Array);
+/**
 * @returns {Promise<void>}
 */
-export function init_webtransport(url: string, certificate_bytes: Uint8Array, event_category: string, context_id: string): Promise<void>;
+  init_session(): Promise<void>;
+/**
+* @param {string} event_category
+* @param {string} context_id
+* @param {Function} callback
+* @param {any} this_context
+* @returns {Promise<void>}
+*/
+  connect_to_context(event_category: string, context_id: string, callback: Function, this_context: any): Promise<void>;
+/**
+* @param {string} message
+* @returns {Promise<void>}
+*/
+  send_client_message(message: string): Promise<void>;
+/**
+* @param {string} message
+* @returns {Promise<void>}
+*/
+  send_board_message(message: string): Promise<void>;
+/**
+* @param {string} message
+* @returns {Promise<void>}
+*/
+  send_element_message(message: string): Promise<void>;
+/**
+* @param {string} message
+* @returns {Promise<void>}
+*/
+  send_active_member_message(message: string): Promise<void>;
+/**
+* @returns {Promise<void>}
+*/
+  close(): Promise<void>;
+/**
+* @returns {Promise<Promise<any>>}
+*/
+  is_closed(): Promise<Promise<any>>;
+}
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
-  readonly init_webtransport: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => number;
+  readonly __wbg_webtransportclient_free: (a: number) => void;
+  readonly webtransportclient_new: (a: number, b: number, c: number, d: number) => number;
+  readonly webtransportclient_init_session: (a: number) => number;
+  readonly webtransportclient_connect_to_context: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => number;
+  readonly webtransportclient_send_client_message: (a: number, b: number, c: number) => number;
+  readonly webtransportclient_send_board_message: (a: number, b: number, c: number) => number;
+  readonly webtransportclient_send_element_message: (a: number, b: number, c: number) => number;
+  readonly webtransportclient_send_active_member_message: (a: number, b: number, c: number) => number;
+  readonly webtransportclient_close: (a: number) => number;
+  readonly webtransportclient_is_closed: (a: number) => number;
   readonly __wbindgen_malloc: (a: number, b: number) => number;
   readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
   readonly __wbindgen_export_2: WebAssembly.Table;
