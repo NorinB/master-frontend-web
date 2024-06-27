@@ -10,8 +10,9 @@ import { BoardNotFoundError, NotInABoardCurrentlyError, UserAlreadyPartOfThisBoa
 import { MatDialog } from '@angular/material/dialog';
 import { MemberAddDialogComponent } from './member-add-dialog/member-add-dialog.component';
 import { take } from 'rxjs';
-import { initWasm, WebTransportClient } from 'wasm-webtransport';
 import { Location } from '@angular/common';
+import { WebTransportService } from '../shared/webtransport/webtransport.service';
+import { AuthService } from '../shared/auth/auth.service';
 
 @Component({
   selector: 'board',
@@ -23,8 +24,10 @@ import { Location } from '@angular/common';
 export class BoardComponent implements OnInit {
   constructor(
     private appbarService: AppbarService,
+    private authService: AuthService,
     public boardService: BoardService,
     private userService: UserService,
+    private webTransportService: WebTransportService,
     private snackBar: MatSnackBar,
     private location: Location,
     private dialog: MatDialog,
@@ -47,66 +50,16 @@ export class BoardComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    let url = 'https://[::1]:3031';
-    const certificate = new Uint8Array([
-      139, 209, 60, 49, 254, 89, 124, 26, 18, 153, 140, 188, 43, 245, 4, 48, 241, 223, 6, 24, 8, 114, 22, 121, 172, 44, 146, 8, 37, 94, 214, 92,
-    ]);
-    const eventCategory = 'board';
-    const contextId = '667362d829a107b93fcd9639';
-    this.initWasm(url, certificate, eventCategory, contextId);
-    // this.testWebTransport(url, certificate, eventCategory, contextId);
+    this.initWebTransport();
   }
 
-  async testWebTransport(url: string, certificate: Uint8Array, eventCategory: string, contextId: string) {
-    // Create a WebTransport instance connecting to the Rust server
-    const certificateArray = certificate;
-    console.log('Starte WebTransport...');
-    let transport = new WebTransport(url, {
-      serverCertificateHashes: [{ algorithm: 'sha-256', value: certificateArray.buffer }],
-    });
-    await transport.ready;
-
-    // Create a bidirectional stream
-    const stream = await transport.createBidirectionalStream();
-    const writer = stream.writable.getWriter();
-    const reader = stream.readable.getReader();
-
-    const initMessage = {
-      messageType: 'init',
-      eventCategory: eventCategory,
-      contextId: contextId,
-    };
-
-    console.log('Event Category: ', initMessage.eventCategory);
-    console.log('init with contextId: ', initMessage.contextId);
-    await writer.write(new TextEncoder().encode(JSON.stringify(initMessage)));
-
-    console.log('Warte auf Init Message');
-    let data = await reader.read();
-    console.log(new TextDecoder().decode(data.value));
-
-    console.log('Warte auf Async Message');
-    for (let i = 0; i < 2; i++) {
-      data = await reader.read();
-      console.log(new TextDecoder().decode(data.value));
-    }
-
-    transport.close();
-  }
-
-  async initWasm(url: string, certificate: Uint8Array, eventCategory: string, contextId: string): Promise<void> {
-    await initWasm();
-    const client = new WebTransportClient(url, certificate);
-    await client.init_session();
-    await client.connect_to_context(
-      // TODO: hier halt jetzt was gescheites machen mit dem Webtransport
-      eventCategory,
-      contextId,
-      (message) => {
-        console.log('Hier ist die Message in JavaScript', message);
-      },
-      this,
-    );
+  async initWebTransport(): Promise<void> {
+    await this.webTransportService.initSession();
+    this.webTransportService.connectToContext('client', this.authService.user()!.id, (message) => {}, this);
+    const boardId = this.boardService.activeBoard()!._id;
+    this.webTransportService.connectToContext('board', boardId, (message) => {}, this);
+    this.webTransportService.connectToContext('element', boardId, (message) => {}, this);
+    this.webTransportService.connectToContext('activeMember', boardId, (message) => {}, this);
   }
 
   private async addMember(nameOrEmail: string): Promise<void> {
