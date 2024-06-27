@@ -57,6 +57,7 @@ export class BoardComponent implements OnInit {
     await this.webTransportService.initSession();
     this.webTransportService.connectToContext('client', this.authService.user()!.id, (message) => {}, this);
     const boardId = this.boardService.activeBoard()!._id;
+    // TODO: mayber hier noch einen callback für den error fall, nicht nur (mesage) => {}
     this.webTransportService.connectToContext('board', boardId, (message) => {}, this);
     this.webTransportService.connectToContext('element', boardId, (message) => {}, this);
     this.webTransportService.connectToContext('activeMember', boardId, (message) => {}, this);
