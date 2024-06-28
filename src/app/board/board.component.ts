@@ -148,5 +148,7 @@ export class BoardComponent implements OnInit, AfterViewInit {
       });
   }
 
-  public async createElement(elementName: string): Promise<void> {}
+  public async createElement(elementName: string): Promise<void> {
+    this.elementService.createElement(elementName);
+  }
 }
