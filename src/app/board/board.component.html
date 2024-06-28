@@ -1,2 +1,8 @@
-<!-- TODO: Hier jetzt User hinzufügen können und dann Elemente createn können -->
-<p>Im Board mit ID: {{ boardService.activeBoard()?._id }}</p>
+<canvas #canvas></canvas>
+<div class="element-selection">
+  @for (element of creatableElements(); track $index) {
+    <button (click)="createElement(element)">
+      {{ element }}
+    </button>
+  }
+</div>

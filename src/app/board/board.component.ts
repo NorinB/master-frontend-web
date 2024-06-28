@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnInit, ViewChild, WritableSignal, signal } from '@angular/core';
 import { AppbarService } from '../shared/appbar.service';
 import { BoardService } from '../shared/board/board.service';
 import { UserService } from '../shared/user/user.service';
@@ -13,6 +13,7 @@ import { take } from 'rxjs';
 import { Location } from '@angular/common';
 import { WebTransportService } from '../shared/webtransport/webtransport.service';
 import { AuthService } from '../shared/auth/auth.service';
+import { ElementService } from '../shared/element/element.service';
 
 @Component({
   selector: 'board',
@@ -21,11 +22,15 @@ import { AuthService } from '../shared/auth/auth.service';
   templateUrl: './board.component.html',
   styleUrl: './board.component.scss',
 })
-export class BoardComponent implements OnInit {
+export class BoardComponent implements OnInit, AfterViewInit {
+  @ViewChild('canvas') private canvasElement: ElementRef<HTMLCanvasElement>;
+  public creatableElements: WritableSignal<string[]> = signal([]);
+
   constructor(
     private appbarService: AppbarService,
     private authService: AuthService,
     public boardService: BoardService,
+    private elementService: ElementService,
     private userService: UserService,
     private webTransportService: WebTransportService,
     private snackBar: MatSnackBar,
@@ -36,8 +41,12 @@ export class BoardComponent implements OnInit {
     this.appbarService.setActions([
       {
         icon: 'refresh',
-        // TODO: hier noch Connections erneuern
-        action: () => {},
+        action: async () => {
+          if (!(await this.webTransportService.isClosed())) {
+            return;
+          }
+          this.initWebTransport();
+        },
       },
       {
         icon: 'person_add',
@@ -51,16 +60,24 @@ export class BoardComponent implements OnInit {
 
   ngOnInit(): void {
     this.initWebTransport();
+    this.creatableElements.set(this.elementService.getCreatableElements());
+  }
+
+  ngAfterViewInit(): void {
+    this.elementService.setupCanvas(this.canvasElement.nativeElement);
   }
 
   async initWebTransport(): Promise<void> {
-    await this.webTransportService.initSession();
-    this.webTransportService.connectToContext('client', this.authService.user()!.id, (message) => {}, this);
-    const boardId = this.boardService.activeBoard()!._id;
-    // TODO: mayber hier noch einen callback für den error fall, nicht nur (mesage) => {}
-    this.webTransportService.connectToContext('board', boardId, (message) => {}, this);
-    this.webTransportService.connectToContext('element', boardId, (message) => {}, this);
-    this.webTransportService.connectToContext('activeMember', boardId, (message) => {}, this);
+    try {
+      await this.webTransportService.initSession();
+      this.webTransportService.connectToContext('client', this.authService.user()!.id, (message) => {}, this);
+      const boardId = this.boardService.activeBoard()!._id;
+      this.webTransportService.connectToContext('board', boardId, (message) => {}, this);
+      this.webTransportService.connectToContext('element', boardId, (message) => {}, this);
+      this.webTransportService.connectToContext('activeMember', boardId, (message) => {}, this);
+    } catch (e) {
+      this.snackBar.open('WebTransport closed', 'Ok', defaultSnackbarConfig());
+    }
   }
 
   private async addMember(nameOrEmail: string): Promise<void> {
@@ -130,4 +147,6 @@ export class BoardComponent implements OnInit {
         }
       });
   }
+
+  public async createElement(elementName: string): Promise<void> {}
 }
