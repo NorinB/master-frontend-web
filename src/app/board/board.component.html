@@ -1,8 +1,8 @@
-<canvas #canvas></canvas>
+<canvas class="canvas" #canvas></canvas>
 <div class="element-selection">
-  @for (element of creatableElements(); track $index) {
-    <button (click)="createElement(element)">
-      {{ element }}
+  @for (element of elementService.creatableElements(); track $index) {
+    <button class="element-button" mat-flat-button (click)="createElement(element.name)">
+      {{ element.name }}
     </button>
   }
 </div>
