@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnInit, ViewChild, WritableSignal, signal } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
 import { AppbarService } from '../shared/appbar.service';
 import { BoardService } from '../shared/board/board.service';
 import { UserService } from '../shared/user/user.service';
@@ -14,23 +14,24 @@ import { Location } from '@angular/common';
 import { WebTransportService } from '../shared/webtransport/webtransport.service';
 import { AuthService } from '../shared/auth/auth.service';
 import { ElementService } from '../shared/element/element.service';
+import { MatButtonModule } from '@angular/material/button';
 
 @Component({
   selector: 'board',
   standalone: true,
-  imports: [],
+  imports: [MatButtonModule],
   templateUrl: './board.component.html',
   styleUrl: './board.component.scss',
 })
 export class BoardComponent implements OnInit, AfterViewInit {
   @ViewChild('canvas') private canvasElement: ElementRef<HTMLCanvasElement>;
-  public creatableElements: WritableSignal<string[]> = signal([]);
 
   constructor(
     private appbarService: AppbarService,
+    // @ts-ignore
     private authService: AuthService,
     public boardService: BoardService,
-    private elementService: ElementService,
+    public elementService: ElementService,
     private userService: UserService,
     private webTransportService: WebTransportService,
     private snackBar: MatSnackBar,
@@ -60,21 +61,53 @@ export class BoardComponent implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     this.initWebTransport();
-    this.creatableElements.set(this.elementService.getCreatableElements());
+    this.initCreatableElements();
   }
 
   ngAfterViewInit(): void {
     this.elementService.setupCanvas(this.canvasElement.nativeElement);
   }
 
+  private async initCreatableElements(): Promise<void> {
+    await this.elementService.getCreatableElements();
+  }
+
   async initWebTransport(): Promise<void> {
     try {
       await this.webTransportService.initSession();
-      this.webTransportService.connectToContext('client', this.authService.user()!.id, (message) => {}, this);
+      this.webTransportService.connectToContext(
+        'client',
+        this.authService.user()!.id,
+        (message) => {
+          console.log(message);
+        },
+        this,
+      );
       const boardId = this.boardService.activeBoard()!._id;
-      this.webTransportService.connectToContext('board', boardId, (message) => {}, this);
-      this.webTransportService.connectToContext('element', boardId, (message) => {}, this);
-      this.webTransportService.connectToContext('activeMember', boardId, (message) => {}, this);
+      this.webTransportService.connectToContext(
+        'board',
+        boardId,
+        (message) => {
+          console.log(message);
+        },
+        this,
+      );
+      this.webTransportService.connectToContext(
+        'element',
+        boardId,
+        (message) => {
+          console.log(message);
+        },
+        this,
+      );
+      this.webTransportService.connectToContext(
+        'activeMember',
+        boardId,
+        (message) => {
+          console.log(message);
+        },
+        this,
+      );
     } catch (e) {
       this.snackBar.open('WebTransport closed', 'Ok', defaultSnackbarConfig());
     }
@@ -149,6 +182,11 @@ export class BoardComponent implements OnInit, AfterViewInit {
   }
 
   public async createElement(elementName: string): Promise<void> {
-    this.elementService.createElement(elementName);
+    await this.elementService.createElement(elementName);
+  }
+
+  @HostListener('window:resize', ['$event'])
+  public handleWindowResize(event) {
+    this.elementService.handleWindowResize(event);
   }
 }
