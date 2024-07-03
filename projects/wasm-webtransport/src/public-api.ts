@@ -3,5 +3,5 @@
  */
 
 import init from './lib/wasm-webtransport/pkg';
-export { WebTransportClient } from './lib/wasm-webtransport/pkg';
+export { WebTransportClient, WebTransportSendStream } from './lib/wasm-webtransport/pkg';
 export { init as initWasm };

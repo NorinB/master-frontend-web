@@ -1,12 +1,11 @@
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
-use std::sync::{Arc, Mutex};
 use wasm_bindgen::prelude::*;
 use web_sys::console;
-use web_sys::js_sys::{Array, JsString, Promise};
+use web_sys::js_sys::{Array, JsString};
 use xwt_core::prelude::*;
 use xwt_web_sys::{
-    CertificateHash, Endpoint, HashAlgorithm, SendStream, Session, WebTransportOptions,
+    CertificateHash, Endpoint, HashAlgorithm, RecvStream, SendStream, Session, WebTransportOptions,
 };
 
 #[derive(Serialize)]
@@ -30,16 +29,18 @@ pub struct WebTransportClient {
     session: Option<Session>,
     endpoint: Endpoint,
     url: String,
-    client_send_stream: Option<Arc<Mutex<SendStream>>>,
-    board_send_stream: Option<Arc<Mutex<SendStream>>>,
-    element_send_stream: Option<Arc<Mutex<SendStream>>>,
-    active_member_send_stream: Option<Arc<Mutex<SendStream>>>,
+    client_read_stream: Option<RecvStream>,
+    board_read_stream: Option<RecvStream>,
+    element_read_stream: Option<RecvStream>,
+    active_member_read_stream: Option<RecvStream>,
 }
 
 #[wasm_bindgen]
 impl WebTransportClient {
     #[wasm_bindgen(constructor)]
     pub fn new(url: String, certificate_bytes: Vec<u8>) -> Self {
+        console_error_panic_hook::set_once();
+
         let options = WebTransportOptions {
             server_certificate_hashes: vec![CertificateHash {
                 algorithm: HashAlgorithm::Sha256,
@@ -56,10 +57,10 @@ impl WebTransportClient {
             session: None,
             endpoint,
             url,
-            client_send_stream: None,
-            board_send_stream: None,
-            element_send_stream: None,
-            active_member_send_stream: None,
+            client_read_stream: None,
+            board_read_stream: None,
+            element_read_stream: None,
+            active_member_read_stream: None,
         }
     }
 
@@ -75,13 +76,11 @@ impl WebTransportClient {
         self.session = Some(session);
     }
 
-    pub async fn connect_to_context(
+    pub async fn setup_connection(
         &mut self,
         event_category: String,
         context_id: String,
-        callback: &js_sys::Function,
-        this_context: &JsValue,
-    ) -> Result<(), JsError> {
+    ) -> Result<WebTransportSendStream, JsError> {
         let opening = match &self.session {
             Some(session) => session.open_bi().await.unwrap(),
             None => return Err(JsError::new("Session not active")),
@@ -141,109 +140,190 @@ impl WebTransportClient {
                 ))
             }
         }
-
-        let send_stream_arc = Some(Arc::new(Mutex::new(send)));
         match event_category.as_str() {
-            "client" => {
-                self.client_send_stream = send_stream_arc;
-            }
-            "activeMember" => {
-                self.board_send_stream = send_stream_arc;
+            "board" => {
+                self.board_read_stream = Some(read);
             }
             "element" => {
-                self.element_send_stream = send_stream_arc;
+                self.element_read_stream = Some(read);
+            }
+            "active_member" => {
+                self.active_member_read_stream = Some(read);
             }
             _ => {
-                self.board_send_stream = send_stream_arc;
+                self.client_read_stream = Some(read);
             }
         };
-        loop {
-            let message_length = match read.read(&mut buffer).await {
-                Ok(bytes_read) => match bytes_read {
-                    Some(bytes_read) => bytes_read,
-                    None => {
-                        return Err(JsError::new("Nachricht hat keine Länge"));
-                    }
-                },
-                Err(_) => {
-                    return Err(JsError::new("Nachricht konnte nicht gelesen werden"));
+        Ok(WebTransportSendStream { send_stream: send })
+    }
+
+    pub async fn connect_to_context(
+        &mut self,
+        board_callback: &js_sys::Function,
+        element_callback: &js_sys::Function,
+        active_member_callback: &js_sys::Function,
+        client_callback: &js_sys::Function,
+        this_context: &JsValue,
+    ) -> Result<(), JsError> {
+        let board_read_stream: &mut RecvStream = match &mut self.board_read_stream {
+            Some(read_stream) => read_stream,
+            None => return Err(JsError::new("Board Read Stream existiert nicht")),
+        };
+        let element_read_stream: &mut RecvStream = match &mut self.element_read_stream {
+            Some(read_stream) => read_stream,
+            None => return Err(JsError::new("Element Read Stream existiert nicht")),
+        };
+        let active_member_read_stream: &mut RecvStream = match &mut self.active_member_read_stream {
+            Some(read_stream) => read_stream,
+            None => return Err(JsError::new("Active Member Read Stream existiert nicht")),
+        };
+        let client_read_stream: &mut RecvStream = match &mut self.client_read_stream {
+            Some(read_stream) => read_stream,
+            None => return Err(JsError::new("Client Read Stream existiert nicht")),
+        };
+        tokio::select! {
+            _ = async {
+                let mut buffer = vec![0; 65536].into_boxed_slice();
+                loop {
+                    let message_length = match board_read_stream.read(&mut buffer).await {
+                        Ok(bytes_read) => match bytes_read {
+                            Some(bytes_read) => bytes_read,
+                            None => {
+                                return Err::<(), JsError>(JsError::new("Nachricht hat keine Länge"));
+                            }
+                        },
+                        Err(_) => {
+                            return Err(JsError::new("Nachricht konnte nicht gelesen werden"));
+                        }
+                    };
+                    let message = match std::str::from_utf8(&buffer[..message_length]) {
+                        Ok(message) => message,
+                        Err(_) => {
+                            return Err(JsError::new(
+                                "Konnte Nachricht-Bytes nicht in String umwandeln",
+                            ));
+                        }
+                    };
+
+                    let message = &JsString::from_str(message).unwrap();
+                    let _ = board_callback.call1(this_context, message);
+                    console::log(&Array::of1(message));
                 }
-            };
-            let message = match std::str::from_utf8(&buffer[..message_length]) {
-                Ok(message) => message,
-                Err(_) => {
-                    return Err(JsError::new(
-                        "Konnte Nachricht-Bytes nicht in String umwandeln",
-                    ));
+            } => {
+                console::error(&Array::of1(
+                    &JsString::from_str(
+                        format!("Connection to Board Context Lost").as_str(),
+                    )
+                    .unwrap(),
+                ));
+            }
+            _ = async {
+                let mut buffer = vec![0; 65536].into_boxed_slice();
+                loop {
+                    let message_length = match element_read_stream.read(&mut buffer).await {
+                        Ok(bytes_read) => match bytes_read {
+                            Some(bytes_read) => bytes_read,
+                            None => {
+                                return Err::<(), JsError>(JsError::new("Nachricht hat keine Länge"));
+                            }
+                        },
+                        Err(_) => {
+                            return Err(JsError::new("Nachricht konnte nicht gelesen werden"));
+                        }
+                    };
+                    let message = match std::str::from_utf8(&buffer[..message_length]) {
+                        Ok(message) => message,
+                        Err(_) => {
+                            return Err(JsError::new(
+                                "Konnte Nachricht-Bytes nicht in String umwandeln",
+                            ));
+                        }
+                    };
+
+                    let message = &JsString::from_str(message).unwrap();
+                    let _ = element_callback.call1(this_context, message);
+                    console::log(&Array::of1(message));
                 }
-            };
+            } => {
+                console::error(&Array::of1(
+                    &JsString::from_str(
+                        format!("Connection to Element Context Lost").as_str(),
+                    )
+                    .unwrap(),
+                ));
+            }
+            _ = async {
+                let mut buffer = vec![0; 65536].into_boxed_slice();
+                loop {
+                    let message_length = match active_member_read_stream.read(&mut buffer).await {
+                        Ok(bytes_read) => match bytes_read {
+                            Some(bytes_read) => bytes_read,
+                            None => {
+                                return Err::<(), JsError>(JsError::new("Nachricht hat keine Länge"));
+                            }
+                        },
+                        Err(_) => {
+                            return Err(JsError::new("Nachricht konnte nicht gelesen werden"));
+                        }
+                    };
+                    let message = match std::str::from_utf8(&buffer[..message_length]) {
+                        Ok(message) => message,
+                        Err(_) => {
+                            return Err(JsError::new(
+                                "Konnte Nachricht-Bytes nicht in String umwandeln",
+                            ));
+                        }
+                    };
 
-            let message = &JsString::from_str(message).unwrap();
-            let _ = callback.call1(this_context, message);
-            console::log(&Array::of1(message));
-        }
-    }
+                    let message = &JsString::from_str(message).unwrap();
+                    let _ = active_member_callback.call1(this_context, message);
+                    console::log(&Array::of1(message));
+                }
+            } => {
+                console::error(&Array::of1(
+                    &JsString::from_str(
+                        format!("Connection to Active Member Context Lost").as_str(),
+                    )
+                    .unwrap(),
+                ));
+            }
+            _ = async {
+                let mut buffer = vec![0; 65536].into_boxed_slice();
+                loop {
+                    let message_length = match client_read_stream.read(&mut buffer).await {
+                        Ok(bytes_read) => match bytes_read {
+                            Some(bytes_read) => bytes_read,
+                            None => {
+                                return Err::<(), JsError>(JsError::new("Nachricht hat keine Länge"));
+                            }
+                        },
+                        Err(_) => {
+                            return Err(JsError::new("Nachricht konnte nicht gelesen werden"));
+                        }
+                    };
+                    let message = match std::str::from_utf8(&buffer[..message_length]) {
+                        Ok(message) => message,
+                        Err(_) => {
+                            return Err(JsError::new(
+                                "Konnte Nachricht-Bytes nicht in String umwandeln",
+                            ));
+                        }
+                    };
 
-    pub async fn send_client_message(&self, message: String) -> Result<(), JsError> {
-        match &self.client_send_stream {
-            Some(send_stream_mutex) => match send_stream_mutex.lock() {
-                Ok(mut send_stream) => match send_stream.write(message.as_bytes()).await {
-                    Ok(_) => Ok(()),
-                    Err(_) => Err(JsError::new("Konnte Clientnachricht nicht schicken")),
-                },
-                Err(_) => Err(JsError::new("Konnte Clientstream nicht holen")),
-            },
-            None => Err(JsError::new(
-                "WebTransportverbindung wurde bereits geschlossen",
-            )),
+                    let message = &JsString::from_str(message).unwrap();
+                    let _ = client_callback.call1(this_context, message);
+                    console::log(&Array::of1(message));
+                }
+            } => {
+                console::error(&Array::of1(
+                    &JsString::from_str(
+                        format!("Connection to Client Context Lost").as_str(),
+                    )
+                    .unwrap(),
+                ));
+            }
         }
-    }
-
-    pub async fn send_board_message(&self, message: String) -> Result<(), JsError> {
-        match &self.board_send_stream {
-            Some(send_stream_mutex) => match send_stream_mutex.lock() {
-                Ok(mut send_stream) => match send_stream.write(message.as_bytes()).await {
-                    Ok(_) => Ok(()),
-                    Err(_) => Err(JsError::new("Konnte Boardnachricht nicht schicken")),
-                },
-                Err(_) => Err(JsError::new("Konnte Boardstream nicht holen")),
-            },
-            None => Err(JsError::new(
-                "WebTransportverbindung wurde bereits geschlossen",
-            )),
-        }
-    }
-
-    pub async fn send_element_message(&self, message: String) -> Result<(), JsError> {
-        match &self.element_send_stream {
-            Some(send_stream_mutex) => match send_stream_mutex.lock() {
-                Ok(mut send_stream) => match send_stream.write(message.as_bytes()).await {
-                    Ok(_) => Ok(()),
-                    Err(_) => Err(JsError::new("Konnte Elementnachricht nicht schicken")),
-                },
-                Err(_) => Err(JsError::new("Konnte Elementstream nicht holen")),
-            },
-            None => Err(JsError::new(
-                "WebTransportverbindung wurde bereits geschlossen",
-            )),
-        }
-    }
-
-    pub async fn send_active_member_message(&self, message: String) -> Result<(), JsError> {
-        match &self.active_member_send_stream {
-            Some(send_stream_mutex) => match send_stream_mutex.lock() {
-                Ok(mut send_stream) => match send_stream.write(message.as_bytes()).await {
-                    Ok(_) => Ok(()),
-                    Err(_) => Err(JsError::new(
-                        "Konnte Active-Member-Nachricht nicht schicken",
-                    )),
-                },
-                Err(_) => Err(JsError::new("Konnte Active-Member-Stream nicht holen")),
-            },
-            None => Err(JsError::new(
-                "WebTransportverbindung wurde bereits geschlossen",
-            )),
-        }
+        Ok(())
     }
 
     pub async fn close(&mut self) -> Result<(), JsError> {
@@ -251,20 +331,37 @@ impl WebTransportClient {
             Some(session) => {
                 session.transport.close();
                 self.session = None;
-                self.client_send_stream = None;
-                self.board_send_stream = None;
-                self.active_member_send_stream = None;
-                self.element_send_stream = None;
+                self.client_read_stream = None;
+                self.board_read_stream = None;
+                self.active_member_read_stream = None;
+                self.element_read_stream = None;
                 Ok(())
             }
             None => Err(JsError::new("Session not active")),
         }
     }
 
-    pub async fn is_closed(&self) -> Result<Promise, JsError> {
+    pub async fn is_closed(&self) -> Result<JsValue, JsValue> {
         match &self.session {
-            Some(session) => Ok(session.transport.closed()),
-            None => Err(JsError::new("Session not active")),
+            Some(session) => {
+                Ok(wasm_bindgen_futures::JsFuture::from(session.transport.closed()).await?)
+            }
+            None => Err(JsError::new("Session not active").into()),
+        }
+    }
+}
+
+#[wasm_bindgen]
+pub struct WebTransportSendStream {
+    send_stream: SendStream,
+}
+
+#[wasm_bindgen]
+impl WebTransportSendStream {
+    pub async fn send_message(&mut self, message: String) -> Result<(), JsError> {
+        match self.send_stream.write(message.as_bytes()).await {
+            Ok(_) => Ok(()),
+            Err(_) => Err(JsError::new("WebTransportverbindung bereits geschlossen")),
         }
     }
 }
