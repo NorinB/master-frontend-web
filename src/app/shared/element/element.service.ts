@@ -91,18 +91,21 @@ export class ElementService {
     try {
       await this.webTransportService.sendElementMessage(
         JSON.stringify({
-          selected: false,
-          lockedBy: null,
-          x: 300,
-          y: 300,
-          rotation: 0,
-          scale: 1,
-          zIndex: 1,
-          createdAt: Date.now(),
-          text: '',
-          elementType: foundElement._id,
-          boardId: this.boardService.activeBoard()!._id,
-          color: color,
+          messageType: 'element_createelement',
+          body: {
+            selected: false,
+            lockedBy: null,
+            x: 300,
+            y: 300,
+            rotation: 0,
+            scale: 1,
+            zIndex: 1,
+            createdAt: new Date().toISOString(),
+            text: '',
+            elementType: foundElement._id,
+            boardId: this.boardService.activeBoard()!._id,
+            color: color,
+          },
         }),
       );
     } catch (e) {

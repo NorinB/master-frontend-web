@@ -75,36 +75,69 @@ export class BoardComponent implements OnInit, AfterViewInit {
   async initWebTransport(): Promise<void> {
     try {
       await this.webTransportService.initSession();
-      this.webTransportService.connectToContext(
-        'client',
-        this.authService.user()!.id,
-        (message) => {
-          console.log(message);
+      await this.webTransportService.setupConnections(this.boardService.activeBoard()!._id, this.authService.user()!.id);
+      await this.webTransportService.connectToContext(
+        (boardEvent) => {
+          const jsonMessage = JSON.parse(boardEvent);
+          switch (jsonMessage.messageType) {
+            case 'board_memberadded':
+              break;
+            case 'board_memberremoved':
+              break;
+            default: {
+              console.error('Board Event unknown');
+              return;
+            }
+          }
         },
-        this,
-      );
-      const boardId = this.boardService.activeBoard()!._id;
-      this.webTransportService.connectToContext(
-        'board',
-        boardId,
-        (message) => {
-          console.log(message);
+        (elementEvent) => {
+          const jsonMessage = JSON.parse(elementEvent);
+          switch (jsonMessage.messageType) {
+            case 'element_created':
+              break;
+            case 'element_removed':
+              break;
+            case 'element_moved':
+              break;
+            case 'element_locked':
+              break;
+            case 'element_unlocked':
+              break;
+            case 'element_updated':
+              break;
+            default: {
+              console.error('Element Event unknown');
+              return;
+            }
+          }
         },
-        this,
-      );
-      this.webTransportService.connectToContext(
-        'element',
-        boardId,
-        (message) => {
-          console.log(message);
+        (activeMemberEvent) => {
+          const jsonMessage = JSON.parse(activeMemberEvent);
+          switch (jsonMessage.messageType) {
+            case 'activemember_created':
+              break;
+            case 'activemember_removed':
+              break;
+            case 'activemember_positionupdated':
+              break;
+            default: {
+              console.error('Active Member Event unknown');
+              return;
+            }
+          }
         },
-        this,
-      );
-      this.webTransportService.connectToContext(
-        'activeMember',
-        boardId,
-        (message) => {
-          console.log(message);
+        (clientEvent) => {
+          const jsonMessage = JSON.parse(clientEvent);
+          switch (jsonMessage) {
+            case 'client_removed':
+              break;
+            case 'client_changed':
+              break;
+            default: {
+              console.error('Client Event unknown');
+              return;
+            }
+          }
         },
         this,
       );

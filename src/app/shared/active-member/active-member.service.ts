@@ -82,7 +82,9 @@ export class ActiveMemberService {
       throw new ActiveMemberNotFoundError();
     }
     try {
-      await this.http.delete(`${this.apiBaseUrl}/active-member/${this.activeMember()!.userId}`, { observe: 'response' }).toPromise();
+      await this.http
+        .delete(`${this.apiBaseUrl}/active-member/${this.activeMember()!.userId}/board/${this.boardService.activeBoard()!._id}`, { observe: 'response' })
+        .toPromise();
       this.activeMember.set(null);
       this.boardService.setActiveBoard(null);
     } catch (e) {

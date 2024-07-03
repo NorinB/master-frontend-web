@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { WebTransportClient } from 'wasm-webtransport';
+import { WebTransportClient, WebTransportSendStream } from 'wasm-webtransport';
 import { environment } from '../../../environments/environment';
 import { WebTransportConnectionHasBeenClosedError, WebTransportConnectionIsClosedError, WebTransportNotInitializedError } from './webtransport.error';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -11,7 +11,11 @@ import { defaultSnackbarConfig } from '../snackbar-config';
 export class WebTransportService {
   private webTransportUrl = environment.webTransportUrl;
   private webTransportCertificate = environment.webTransportCertificate;
-  private client: WebTransportClient | null = null;
+  private webTransportClient: WebTransportClient | null = null;
+  private boardSendStream: WebTransportSendStream | null = null;
+  private elementSendStream: WebTransportSendStream | null = null;
+  private activeMemberSendStream: WebTransportSendStream | null = null;
+  private clientSendStream: WebTransportSendStream | null = null;
 
   constructor(private snackBar: MatSnackBar) {}
 
@@ -19,40 +23,54 @@ export class WebTransportService {
     if (!(await this.isClosed())) {
       await this.closeConnection();
     }
-    this.client = new WebTransportClient(this.webTransportUrl, this.webTransportCertificate);
-    await this.client.init_session();
+    this.webTransportClient = new WebTransportClient(this.webTransportUrl, this.webTransportCertificate);
+    await this.webTransportClient.init_session();
+  }
+
+  public async setupConnections(boardId: string, userId: string): Promise<void> {
+    this.boardSendStream = await this.webTransportClient!.setup_connection('board', boardId);
+    this.elementSendStream = await this.webTransportClient!.setup_connection('element', boardId);
+    this.activeMemberSendStream = await this.webTransportClient!.setup_connection('active_member', boardId);
+    this.clientSendStream = await this.webTransportClient!.setup_connection('client', userId);
   }
 
   public async isClosed(): Promise<boolean> {
-    return !this.client || (await this.client.is_closed());
+    return !this.webTransportClient || (await this.webTransportClient.is_closed());
   }
 
   public async closeConnection(): Promise<void> {
-    if (!this.client) {
+    if (!this.webTransportClient) {
       return;
     }
-    await this.client.close();
-    this.client = null;
+    console.log('Jetzt Webtransport schliessen');
+    await this.webTransportClient.close();
+    this.webTransportClient = null;
   }
 
   private async checkClientIsActive(): Promise<void> {
-    if (!this.client) {
+    if (!this.webTransportClient) {
       throw new WebTransportNotInitializedError();
     }
-    if (await this.client.is_closed()) {
-      this.client = null;
-      throw new WebTransportConnectionIsClosedError();
-    }
+    // if (await this.client.is_closed()) {
+    //   this.client = null;
+    //   throw new WebTransportConnectionIsClosedError();
+    // }
   }
 
-  public async connectToContext(eventCategory: string, contextId: string, callback: (message: string) => void, contextObject): Promise<void> {
+  public async connectToContext(
+    boardCallback: (message: string) => void,
+    elementCallback: (message: string) => void,
+    activeMemberCallback: (message: string) => void,
+    clientCallback: (message: string) => void,
+    contextObject,
+  ): Promise<void> {
     await this.checkClientIsActive();
-    const client = this.client!;
+    const client = this.webTransportClient!;
     try {
-      await client.connect_to_context(eventCategory, contextId, callback, contextObject);
+      await client.connect_to_context(boardCallback, elementCallback, activeMemberCallback, clientCallback, contextObject);
     } catch (e) {
       const error = e as Error;
-      this.client = null;
+      this.webTransportClient = null;
       this.snackBar.open(error.message, 'Ok', defaultSnackbarConfig());
       throw new WebTransportConnectionIsClosedError();
     }
@@ -60,44 +78,52 @@ export class WebTransportService {
 
   public async sendClientMessage(message: string): Promise<void> {
     await this.checkClientIsActive();
-    const client = this.client!;
+    if (!this.clientSendStream) {
+      throw new WebTransportConnectionIsClosedError();
+    }
     try {
-      await client.send_client_message(message);
+      await this.clientSendStream!.send_message(message);
     } catch (e) {
-      this.client = null;
+      this.webTransportClient = null;
       throw new WebTransportConnectionHasBeenClosedError();
     }
   }
 
   public async sendBoardMessage(message: string): Promise<void> {
     await this.checkClientIsActive();
-    const client = this.client!;
+    if (!this.boardSendStream) {
+      throw new WebTransportConnectionIsClosedError();
+    }
     try {
-      await client.send_board_message(message);
+      await this.boardSendStream.send_message(message);
     } catch (e) {
-      this.client = null;
+      this.webTransportClient = null;
       throw new WebTransportConnectionHasBeenClosedError();
     }
   }
 
   public async sendElementMessage(message: string): Promise<void> {
     await this.checkClientIsActive();
-    const client = this.client!;
+    if (!this.elementSendStream) {
+      throw new WebTransportConnectionIsClosedError();
+    }
     try {
-      await client.send_element_message(message);
+      await this.elementSendStream.send_message(message);
     } catch (e) {
-      this.client = null;
+      this.webTransportClient = null;
       throw new WebTransportConnectionHasBeenClosedError();
     }
   }
 
   public async sendActiveMemberMessage(message: string): Promise<void> {
     await this.checkClientIsActive();
-    const client = this.client!;
+    if (!this.activeMemberSendStream) {
+      throw new WebTransportConnectionIsClosedError();
+    }
     try {
-      await client.send_active_member_message(message);
+      await this.activeMemberSendStream.send_message(message);
     } catch (e) {
-      this.client = null;
+      this.webTransportClient = null;
       throw new WebTransportConnectionHasBeenClosedError();
     }
   }
