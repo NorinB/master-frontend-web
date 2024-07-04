@@ -97,7 +97,6 @@ export class AuthService {
       throw new CredentialsNotSufficientError();
     }
     const storedUserJson = this.getValidStoredUser();
-    console.log(storedUserJson);
     if (storedUserJson) {
       try {
         const getClientResponse = await this.http.get(`${this.apiBaseUrl}/client/${storedUserJson.id}`, { observe: 'response' }).toPromise();

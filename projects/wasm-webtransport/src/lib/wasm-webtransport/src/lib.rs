@@ -195,8 +195,8 @@ impl WebTransportClient {
         };
         tokio::select! {
             _ = async {
-                let mut buffer = vec![0; 65536].into_boxed_slice();
                 loop {
+                    let mut buffer = vec![0; 65536].into_boxed_slice();
                     let message_length = match board_read_stream.read(&mut buffer).await {
                         Ok(bytes_read) => match bytes_read {
                             Some(bytes_read) => bytes_read,
@@ -230,8 +230,8 @@ impl WebTransportClient {
                 ));
             }
             _ = async {
-                let mut buffer = vec![0; 65536].into_boxed_slice();
                 loop {
+                    let mut buffer = vec![0; 65536].into_boxed_slice();
                     let message_length = match element_read_stream.read(&mut buffer).await {
                         Ok(bytes_read) => match bytes_read {
                             Some(bytes_read) => bytes_read,
@@ -265,8 +265,8 @@ impl WebTransportClient {
                 ));
             }
             _ = async {
-                let mut buffer = vec![0; 65536].into_boxed_slice();
                 loop {
+                    let mut buffer = vec![0; 65536].into_boxed_slice();
                     let message_length = match active_member_read_stream.read(&mut buffer).await {
                         Ok(bytes_read) => match bytes_read {
                             Some(bytes_read) => bytes_read,
@@ -300,8 +300,8 @@ impl WebTransportClient {
                 ));
             }
             _ = async {
-                let mut buffer = vec![0; 65536].into_boxed_slice();
                 loop {
+                    let mut buffer = vec![0; 65536].into_boxed_slice();
                     let message_length = match client_read_stream.read(&mut buffer).await {
                         Ok(bytes_read) => match bytes_read {
                             Some(bytes_read) => bytes_read,

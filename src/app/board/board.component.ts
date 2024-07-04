@@ -74,65 +74,86 @@ export class BoardComponent implements OnInit, AfterViewInit {
       await this.webTransportService.initSession(this.boardService.activeBoard()!._id, this.authService.user()!.id);
       await this.webTransportService.connectToContext(
         (boardEvent) => {
-          const jsonMessage = JSON.parse(boardEvent);
-          switch (jsonMessage.messageType) {
-            case 'board_memberadded':
-              break;
-            case 'board_memberremoved':
-              break;
-            default: {
-              console.error('Board Event unknown');
-              return;
+          try {
+            const jsonMessage = JSON.parse(boardEvent);
+            switch (jsonMessage.messageType) {
+              case 'board_memberadded':
+                break;
+              case 'board_memberremoved':
+                break;
+              default: {
+                console.error('Board Event unknown');
+                return;
+              }
             }
+          } catch (e) {
+            console.error(e);
           }
         },
         (elementEvent) => {
-          const jsonMessage = JSON.parse(elementEvent);
-          switch (jsonMessage.messageType) {
-            case 'element_created':
-              break;
-            case 'element_removed':
-              break;
-            case 'element_moved':
-              break;
-            case 'element_locked':
-              break;
-            case 'element_unlocked':
-              break;
-            case 'element_updated':
-              break;
-            default: {
-              console.error('Element Event unknown');
+          try {
+            const jsonMessage = JSON.parse(elementEvent);
+            const messageBody = JSON.parse(jsonMessage.body);
+            if (messageBody.userId === this.authService.user()!.id) {
               return;
             }
+            switch (jsonMessage.messageType) {
+              case 'element_created':
+                this.elementService.createElementByEvent(messageBody);
+                break;
+              case 'element_removed':
+                break;
+              case 'element_moved':
+                break;
+              case 'element_locked':
+                break;
+              case 'element_unlocked':
+                break;
+              case 'element_updated':
+                break;
+              default: {
+                console.error('Element Event unknown');
+                return;
+              }
+            }
+          } catch (e) {
+            console.error(e);
           }
         },
         (activeMemberEvent) => {
-          const jsonMessage = JSON.parse(activeMemberEvent);
-          switch (jsonMessage.messageType) {
-            case 'activemember_created':
-              break;
-            case 'activemember_removed':
-              break;
-            case 'activemember_positionupdated':
-              break;
-            default: {
-              console.error('Active Member Event unknown');
-              return;
+          try {
+            const jsonMessage = JSON.parse(activeMemberEvent);
+            switch (jsonMessage.messageType) {
+              case 'activemember_created':
+                break;
+              case 'activemember_removed':
+                break;
+              case 'activemember_positionupdated':
+                break;
+              default: {
+                console.error('Active Member Event unknown');
+                return;
+              }
             }
+          } catch (e) {
+            console.error(e);
           }
         },
         (clientEvent) => {
-          const jsonMessage = JSON.parse(clientEvent);
-          switch (jsonMessage) {
-            case 'client_removed':
-              break;
-            case 'client_changed':
-              break;
-            default: {
-              console.error('Client Event unknown');
-              return;
+          try {
+            const jsonMessage = JSON.parse(clientEvent);
+            switch (jsonMessage) {
+              case 'client_removed':
+                break;
+              case 'client_changed':
+                break;
+              default: {
+                console.error('Client Event unknown');
+                return;
+              }
             }
+          } catch (e) {
+            console.error(e);
           }
         },
         this,
@@ -211,7 +232,7 @@ export class BoardComponent implements OnInit, AfterViewInit {
   }
 
   public async createElement(elementName: string): Promise<void> {
-    await this.elementService.createElement(elementName);
+    await this.elementService.createElementByClick(elementName);
   }
 
   @HostListener('window:resize', ['$event'])

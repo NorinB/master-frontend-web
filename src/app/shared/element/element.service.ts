@@ -2,13 +2,16 @@ import { Injectable, WritableSignal, signal } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { WebTransportService } from '../webtransport/webtransport.service';
 // @ts-ignore: Unused parameter
-import { Canvas, Circle, FabricText, Path } from 'fabric';
+import { Canvas, Circle, FabricObject, FabricText, Path } from 'fabric';
 import { CanvasNotReadyError, ElementNotFoundError } from './element.error';
 import { ElementType, getRandomColor } from './element.model';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { StatusCodes } from 'http-status-codes';
 import { UnexpectedApiError } from '../general.error';
 import { BoardService } from '../board/board.service';
+import { AuthService } from '../auth/auth.service';
+import { CreateElementEventMessage } from './element.dto';
+import ObjectId from 'bson-objectid';
 
 @Injectable({
   providedIn: 'root',
@@ -17,10 +20,12 @@ export class ElementService {
   private apiBaseUrl = environment.apiBaseUrl;
   public canvas: WritableSignal<Canvas | null> = signal(null);
   public creatableElements: WritableSignal<ElementType[]> = signal([]);
+  private currentElements = new Map<string, FabricObject>();
 
   constructor(
     private webTransportService: WebTransportService,
     private boardService: BoardService,
+    private authService: AuthService,
     private http: HttpClient,
   ) {}
 
@@ -75,25 +80,50 @@ export class ElementService {
     }
   }
 
-  public async createElement(elementName: string): Promise<void> {
+  public async loadExistingElements(): Promise<void> {
+    // TODO: hier weitermachen
+  }
+
+  private createElement(path: string, top: number, left: number, fill: string, scaleX: number, scaleY: number, rotation: number): FabricObject {
+    const element = new Path(path, { top: top, left: left, fill: fill, scaleX: scaleX, scaleY: scaleY });
+    element.rotate(rotation);
+    return element;
+  }
+
+  public createElementByEvent(message: CreateElementEventMessage): void {
+    this.checkIfCanvasIsReady();
+    const elementType = this.creatableElements().find((elementType) => elementType._id === message.elementType);
+    if (!elementType) {
+      throw new ElementNotFoundError();
+    }
+    const element = this.createElement(elementType.path, message.x, message.y, message.color, message.scaleX, message.scaleY, message.rotation);
+    this.currentElements.set(message._id, element);
+    this.canvas()!.add(element);
+  }
+
+  public async createElementByClick(elementName: string): Promise<void> {
     this.checkIfCanvasIsReady();
     const foundElement = this.creatableElements().find((elementType) => elementType.name === elementName);
     if (!foundElement) {
       throw new ElementNotFoundError();
     }
     const color = getRandomColor();
-    const element = new Path(foundElement.path, { top: 300, left: 300, fill: color });
+    const element = this.createElement(foundElement.path, 300, 300, color, 1, 1, 0);
     try {
+      const elementId = ObjectId().toHexString();
       await this.webTransportService.sendElementMessage(
         JSON.stringify({
           messageType: 'element_createelement',
           body: {
+            _id: elementId,
+            userId: this.authService.user()!.id,
             selected: false,
             lockedBy: null,
             x: 300,
             y: 300,
             rotation: 0,
-            scale: 1,
+            scaleX: 1,
+            scaleY: 1,
             zIndex: 1,
             createdAt: new Date().toISOString(),
             text: '',
@@ -103,10 +133,10 @@ export class ElementService {
           },
         }),
       );
+      this.currentElements.set(elementId, element);
+      this.canvas()!.add(element);
     } catch (e) {
       console.log(e);
-      return;
     }
-    this.canvas()!.add(element);
   }
 }
