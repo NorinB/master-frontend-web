@@ -43,9 +43,6 @@ export class BoardComponent implements OnInit, AfterViewInit {
       {
         icon: 'refresh',
         action: async () => {
-          if (!(await this.webTransportService.isClosed())) {
-            return;
-          }
           this.initWebTransport();
         },
       },
@@ -74,8 +71,7 @@ export class BoardComponent implements OnInit, AfterViewInit {
 
   async initWebTransport(): Promise<void> {
     try {
-      await this.webTransportService.initSession();
-      await this.webTransportService.setupConnections(this.boardService.activeBoard()!._id, this.authService.user()!.id);
+      await this.webTransportService.initSession(this.boardService.activeBoard()!._id, this.authService.user()!.id);
       await this.webTransportService.connectToContext(
         (boardEvent) => {
           const jsonMessage = JSON.parse(boardEvent);

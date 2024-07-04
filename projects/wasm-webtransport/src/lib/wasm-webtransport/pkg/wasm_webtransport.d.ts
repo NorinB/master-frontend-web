@@ -20,6 +20,10 @@ export class WebTransportClient {
 */
   setup_connection(event_category: string, context_id: string): Promise<WebTransportSendStream>;
 /**
+* @returns {Promise<WebTransportTransport>}
+*/
+  get_transport(): Promise<WebTransportTransport>;
+/**
 * @param {Function} board_callback
 * @param {Function} element_callback
 * @param {Function} active_member_callback
@@ -28,14 +32,6 @@ export class WebTransportClient {
 * @returns {Promise<void>}
 */
   connect_to_context(board_callback: Function, element_callback: Function, active_member_callback: Function, client_callback: Function, this_context: any): Promise<void>;
-/**
-* @returns {Promise<void>}
-*/
-  close(): Promise<void>;
-/**
-* @returns {Promise<any>}
-*/
-  is_closed(): Promise<any>;
 }
 /**
 */
@@ -47,6 +43,18 @@ export class WebTransportSendStream {
 */
   send_message(message: string): Promise<void>;
 }
+/**
+*/
+export class WebTransportTransport {
+  free(): void;
+/**
+*/
+  close(): void;
+/**
+* @returns {Promise<any>}
+*/
+  is_closed(): Promise<any>;
+}
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
@@ -56,11 +64,13 @@ export interface InitOutput {
   readonly webtransportclient_new: (a: number, b: number, c: number, d: number) => number;
   readonly webtransportclient_init_session: (a: number) => number;
   readonly webtransportclient_setup_connection: (a: number, b: number, c: number, d: number, e: number) => number;
+  readonly webtransportclient_get_transport: (a: number) => number;
   readonly webtransportclient_connect_to_context: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
-  readonly webtransportclient_close: (a: number) => number;
-  readonly webtransportclient_is_closed: (a: number) => number;
   readonly __wbg_webtransportsendstream_free: (a: number) => void;
   readonly webtransportsendstream_send_message: (a: number, b: number, c: number) => number;
+  readonly __wbg_webtransporttransport_free: (a: number) => void;
+  readonly webtransporttransport_close: (a: number) => void;
+  readonly webtransporttransport_is_closed: (a: number) => number;
   readonly __wbindgen_malloc: (a: number, b: number) => number;
   readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
   readonly __wbindgen_export_2: WebAssembly.Table;

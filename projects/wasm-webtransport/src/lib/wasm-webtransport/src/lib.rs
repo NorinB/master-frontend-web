@@ -1,11 +1,14 @@
 use serde::{Deserialize, Serialize};
+use std::borrow::BorrowMut;
+use std::rc::Rc;
 use std::str::FromStr;
 use wasm_bindgen::prelude::*;
 use web_sys::console;
 use web_sys::js_sys::{Array, JsString};
 use xwt_core::prelude::*;
 use xwt_web_sys::{
-    CertificateHash, Endpoint, HashAlgorithm, RecvStream, SendStream, Session, WebTransportOptions,
+    sys::WebTransport, CertificateHash, Endpoint, HashAlgorithm, RecvStream, SendStream, Session,
+    WebTransportOptions,
 };
 
 #[derive(Serialize)]
@@ -155,6 +158,15 @@ impl WebTransportClient {
             }
         };
         Ok(WebTransportSendStream { send_stream: send })
+    }
+
+    pub async fn get_transport(&self) -> Result<WebTransportTransport, JsError> {
+        match &self.session {
+            Some(session) => Ok(WebTransportTransport {
+                transport: session.transport.clone(),
+            }),
+            None => Err(JsError::new("Session is not active")),
+        }
     }
 
     pub async fn connect_to_context(
@@ -325,30 +337,6 @@ impl WebTransportClient {
         }
         Ok(())
     }
-
-    pub async fn close(&mut self) -> Result<(), JsError> {
-        match &self.session {
-            Some(session) => {
-                session.transport.close();
-                self.session = None;
-                self.client_read_stream = None;
-                self.board_read_stream = None;
-                self.active_member_read_stream = None;
-                self.element_read_stream = None;
-                Ok(())
-            }
-            None => Err(JsError::new("Session not active")),
-        }
-    }
-
-    pub async fn is_closed(&self) -> Result<JsValue, JsValue> {
-        match &self.session {
-            Some(session) => {
-                Ok(wasm_bindgen_futures::JsFuture::from(session.transport.closed()).await?)
-            }
-            None => Err(JsError::new("Session not active").into()),
-        }
-    }
 }
 
 #[wasm_bindgen]
@@ -362,6 +350,25 @@ impl WebTransportSendStream {
         match self.send_stream.write(message.as_bytes()).await {
             Ok(_) => Ok(()),
             Err(_) => Err(JsError::new("WebTransportverbindung bereits geschlossen")),
+        }
+    }
+}
+
+#[wasm_bindgen]
+pub struct WebTransportTransport {
+    transport: Rc<WebTransport>,
+}
+
+#[wasm_bindgen]
+impl WebTransportTransport {
+    pub fn close(&mut self) {
+        let _ = &self.transport.borrow_mut().close();
+    }
+
+    pub async fn is_closed(&mut self) -> Result<JsValue, JsError> {
+        match wasm_bindgen_futures::JsFuture::from(self.transport.borrow_mut().closed()).await {
+            Ok(closed) => Ok(closed),
+            Err(_) => Err(JsError::new("Couldn't check, if transport is closed")),
         }
     }
 }

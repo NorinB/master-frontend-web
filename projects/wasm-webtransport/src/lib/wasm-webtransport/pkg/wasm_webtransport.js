@@ -285,6 +285,13 @@ export class WebTransportClient {
         return takeObject(ret);
     }
     /**
+    * @returns {Promise<WebTransportTransport>}
+    */
+    get_transport() {
+        const ret = wasm.webtransportclient_get_transport(this.__wbg_ptr);
+        return takeObject(ret);
+    }
+    /**
     * @param {Function} board_callback
     * @param {Function} element_callback
     * @param {Function} active_member_callback
@@ -294,20 +301,6 @@ export class WebTransportClient {
     */
     connect_to_context(board_callback, element_callback, active_member_callback, client_callback, this_context) {
         const ret = wasm.webtransportclient_connect_to_context(this.__wbg_ptr, addHeapObject(board_callback), addHeapObject(element_callback), addHeapObject(active_member_callback), addHeapObject(client_callback), addHeapObject(this_context));
-        return takeObject(ret);
-    }
-    /**
-    * @returns {Promise<void>}
-    */
-    close() {
-        const ret = wasm.webtransportclient_close(this.__wbg_ptr);
-        return takeObject(ret);
-    }
-    /**
-    * @returns {Promise<any>}
-    */
-    is_closed() {
-        const ret = wasm.webtransportclient_is_closed(this.__wbg_ptr);
         return takeObject(ret);
     }
 }
@@ -350,6 +343,46 @@ export class WebTransportSendStream {
     }
 }
 
+const WebTransportTransportFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_webtransporttransport_free(ptr >>> 0));
+/**
+*/
+export class WebTransportTransport {
+
+    static __wrap(ptr) {
+        ptr = ptr >>> 0;
+        const obj = Object.create(WebTransportTransport.prototype);
+        obj.__wbg_ptr = ptr;
+        WebTransportTransportFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        WebTransportTransportFinalization.unregister(this);
+        return ptr;
+    }
+
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_webtransporttransport_free(ptr);
+    }
+    /**
+    */
+    close() {
+        wasm.webtransporttransport_close(this.__wbg_ptr);
+    }
+    /**
+    * @returns {Promise<any>}
+    */
+    is_closed() {
+        const ret = wasm.webtransporttransport_is_closed(this.__wbg_ptr);
+        return takeObject(ret);
+    }
+}
+
 async function __wbg_load(module, imports) {
     if (typeof Response === 'function' && module instanceof Response) {
         if (typeof WebAssembly.instantiateStreaming === 'function') {
@@ -384,16 +417,17 @@ async function __wbg_load(module, imports) {
 function __wbg_get_imports() {
     const imports = {};
     imports.wbg = {};
-    imports.wbg.__wbg_close_9a6b7f100bf3fe38 = function(arg0) {
-        getObject(arg0).close();
-    };
-    imports.wbg.__wbindgen_object_drop_ref = function(arg0) {
-        takeObject(arg0);
+    imports.wbg.__wbg_webtransporttransport_new = function(arg0) {
+        const ret = WebTransportTransport.__wrap(arg0);
+        return addHeapObject(ret);
     };
     imports.wbg.__wbg_call_b3ca7c6051f9bec1 = function() { return handleError(function (arg0, arg1, arg2) {
         const ret = getObject(arg0).call(getObject(arg1), getObject(arg2));
         return addHeapObject(ret);
     }, arguments) };
+    imports.wbg.__wbindgen_object_drop_ref = function(arg0) {
+        takeObject(arg0);
+    };
     imports.wbg.__wbindgen_error_new = function(arg0, arg1) {
         const ret = new Error(getStringFromWasm0(arg0, arg1));
         return addHeapObject(ret);
@@ -499,6 +533,9 @@ function __wbg_get_imports() {
     imports.wbg.__wbg_writable_e7e33d74f2b650cd = function(arg0) {
         const ret = getObject(arg0).writable;
         return addHeapObject(ret);
+    };
+    imports.wbg.__wbg_close_9a6b7f100bf3fe38 = function(arg0) {
+        getObject(arg0).close();
     };
     imports.wbg.__wbindgen_memory = function() {
         const ret = wasm.memory;
@@ -645,7 +682,7 @@ function __wbg_get_imports() {
             state0.a = state0.b = 0;
         }
     };
-    imports.wbg.__wbindgen_closure_wrapper773 = function(arg0, arg1, arg2) {
+    imports.wbg.__wbindgen_closure_wrapper774 = function(arg0, arg1, arg2) {
         const ret = makeMutClosure(arg0, arg1, 35, __wbg_adapter_22);
         return addHeapObject(ret);
     };
