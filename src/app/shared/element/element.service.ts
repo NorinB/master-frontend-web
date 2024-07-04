@@ -22,10 +22,7 @@ export class ElementService {
     private webTransportService: WebTransportService,
     private boardService: BoardService,
     private http: HttpClient,
-  ) {
-    console.log(this.apiBaseUrl);
-    console.log(this.webTransportService);
-  }
+  ) {}
 
   private checkIfCanvasIsReady(): void {
     if (!this.canvas()) {
@@ -81,13 +78,11 @@ export class ElementService {
   public async createElement(elementName: string): Promise<void> {
     this.checkIfCanvasIsReady();
     const foundElement = this.creatableElements().find((elementType) => elementType.name === elementName);
-    console.log('Vor check, ob es element gibt');
     if (!foundElement) {
       throw new ElementNotFoundError();
     }
     const color = getRandomColor();
     const element = new Path(foundElement.path, { top: 300, left: 300, fill: color });
-    console.log(`Element mit Path: ${foundElement.path} erstellt vor webtransport`);
     try {
       await this.webTransportService.sendElementMessage(
         JSON.stringify({
@@ -109,10 +104,9 @@ export class ElementService {
         }),
       );
     } catch (e) {
-      console.log(`Fehler während der WebTransportübertragung: `, e);
+      console.log(e);
       return;
     }
-    console.log('Element mit Webtransport verschickt');
     this.canvas()!.add(element);
   }
 }

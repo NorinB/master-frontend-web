@@ -110,7 +110,6 @@ export class AuthService {
     }
     const clientId = uuidv4();
     try {
-      console.log(`Jetzt einloggen mit: E-Mail: ${email}, Name: ${name}, Password: ${password}, ClientId: ${clientId}`);
       const loginResponse = await this.http
         .post<{
           email: string;
