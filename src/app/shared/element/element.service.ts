@@ -10,8 +10,9 @@ import { StatusCodes } from 'http-status-codes';
 import { UnexpectedApiError } from '../general.error';
 import { BoardService } from '../board/board.service';
 import { AuthService } from '../auth/auth.service';
-import { CreateElementEventMessage } from './element.dto';
+import { CreateElementEventMessage, CreateElementMessage, RemoveElementEventMessage, RemoveElementMessage } from './element.dto';
 import ObjectId from 'bson-objectid';
+import { WebTransportMessage } from '../webtransport/webtransport.dto';
 
 @Injectable({
   providedIn: 'root',
@@ -87,6 +88,7 @@ export class ElementService {
   private createElement(path: string, top: number, left: number, fill: string, scaleX: number, scaleY: number, rotation: number): FabricObject {
     const element = new Path(path, { top: top, left: left, fill: fill, scaleX: scaleX, scaleY: scaleY });
     element.rotate(rotation);
+    element.on('removed', (options) => {});
     return element;
   }
 
@@ -101,7 +103,7 @@ export class ElementService {
     this.canvas()!.add(element);
   }
 
-  public async createElementByClick(elementName: string): Promise<void> {
+  public async createElementByUser(elementName: string): Promise<void> {
     this.checkIfCanvasIsReady();
     const foundElement = this.creatableElements().find((elementType) => elementType.name === elementName);
     if (!foundElement) {
@@ -112,31 +114,76 @@ export class ElementService {
     try {
       const elementId = ObjectId().toHexString();
       await this.webTransportService.sendElementMessage(
-        JSON.stringify({
-          messageType: 'element_createelement',
-          body: {
-            _id: elementId,
-            userId: this.authService.user()!.id,
-            selected: false,
-            lockedBy: null,
-            x: 300,
-            y: 300,
-            rotation: 0,
-            scaleX: 1,
-            scaleY: 1,
-            zIndex: 1,
-            createdAt: new Date().toISOString(),
-            text: '',
-            elementType: foundElement._id,
-            boardId: this.boardService.activeBoard()!._id,
-            color: color,
-          },
-        }),
+        JSON.stringify(
+          new WebTransportMessage<CreateElementMessage>({
+            messageType: 'element_createelement',
+            body: {
+              _id: elementId,
+              userId: this.authService.user()!.id,
+              selected: false,
+              lockedBy: null,
+              x: 300,
+              y: 300,
+              rotation: 0,
+              scaleX: 1,
+              scaleY: 1,
+              zIndex: 1,
+              createdAt: new Date().toISOString(),
+              text: '',
+              elementType: foundElement._id,
+              boardId: this.boardService.activeBoard()!._id,
+              color: color,
+            },
+          }),
+        ),
       );
       this.currentElements.set(elementId, element);
       this.canvas()!.add(element);
     } catch (e) {
       console.log(e);
     }
+  }
+
+  public async removeSelectionFromCanvas(): Promise<void> {
+    this.checkIfCanvasIsReady();
+    for (const element of this.canvas()!.getActiveObjects()) {
+      await this.removeElementByUser(element);
+    }
+  }
+
+  public removeElementByEvent(message: RemoveElementEventMessage): void {
+    this.checkIfCanvasIsReady();
+    const foundElement = this.currentElements.get(message._id);
+    if (!foundElement) {
+      throw new ElementNotFoundError();
+    }
+    this.currentElements.delete(message._id);
+    this.canvas()!.remove(foundElement);
+  }
+
+  public async removeElementByUser(element: FabricObject): Promise<void> {
+    this.checkIfCanvasIsReady();
+    const elementId = Array.from(this.currentElements.entries()).find((entry) => entry[1] === element)?.[0];
+    if (!elementId) {
+      throw new ElementNotFoundError();
+    }
+    try {
+      await this.webTransportService.sendElementMessage(
+        JSON.stringify(
+          new WebTransportMessage<RemoveElementMessage>({
+            messageType: 'element_removeelement',
+            body: {
+              _id: elementId,
+              boardId: this.boardService.activeBoard()!._id,
+              userId: this.authService.user()!.id,
+            },
+          }),
+        ),
+      );
+    } catch (e) {
+      console.log(e);
+    }
+    this.currentElements.delete(elementId);
+    this.canvas()!.remove(element);
   }
 }

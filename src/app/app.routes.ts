@@ -8,6 +8,8 @@ import { LoggedInUser } from './shared/auth/auth.model';
 import { BoardComponent } from './board/board.component';
 import { BoardService } from './shared/board/board.service';
 import { ActiveMemberService } from './shared/active-member/active-member.service';
+import { WebTransportService } from './shared/webtransport/webtransport.service';
+import { ElementService } from './shared/element/element.service';
 
 export const routes: Routes = [
   {
@@ -27,7 +29,7 @@ export const routes: Routes = [
     path: 'board/:boardId',
     component: BoardComponent,
     canActivate: [checkIfLoggedIn, checkIfPartOfBoard],
-    canDeactivate: [removeActiveMemberember],
+    canDeactivate: [removeActiveMemberember, closeWebTransport, disposeCanvas],
   },
 ];
 
@@ -43,6 +45,21 @@ function removeActiveMemberember(
   } finally {
     return true;
   }
+}
+
+function closeWebTransport(): MaybeAsync<GuardResult> {
+  const webTransportService = inject(WebTransportService);
+  try {
+    webTransportService.closeConnection();
+  } finally {
+    return true;
+  }
+}
+
+function disposeCanvas(): boolean {
+  const elementService = inject(ElementService);
+  elementService.disposeCanvas();
+  return true;
 }
 
 function checkIfPartOfBoard(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> | boolean {

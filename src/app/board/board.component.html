@@ -1,4 +1,4 @@
-<canvas class="canvas" #canvas></canvas>
+<canvas class="canvas" tabindex="1" #canvas></canvas>
 <div class="element-selection">
   @for (element of elementService.creatableElements(); track $index) {
     <button class="element-button" mat-flat-button (click)="createElement(element.name)">

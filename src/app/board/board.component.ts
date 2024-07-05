@@ -102,6 +102,7 @@ export class BoardComponent implements OnInit, AfterViewInit {
                 this.elementService.createElementByEvent(messageBody);
                 break;
               case 'element_removed':
+                this.elementService.removeElementByEvent(messageBody);
                 break;
               case 'element_moved':
                 break;
@@ -232,11 +233,18 @@ export class BoardComponent implements OnInit, AfterViewInit {
   }
 
   public async createElement(elementName: string): Promise<void> {
-    await this.elementService.createElementByClick(elementName);
+    await this.elementService.createElementByUser(elementName);
   }
 
   @HostListener('window:resize', ['$event'])
   public handleWindowResize(event) {
     this.elementService.handleWindowResize(event);
+  }
+
+  @HostListener('body:keydown', ['$event'])
+  public async handleCanvasKeydown(event: KeyboardEvent): Promise<void> {
+    if (event.key === 'Backspace') {
+      this.elementService.removeSelectionFromCanvas();
+    }
   }
 }
