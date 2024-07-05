@@ -92,6 +92,7 @@ export class BoardComponent implements OnInit, AfterViewInit {
         },
         (elementEvent) => {
           try {
+            // TODO: hier noch handeln, wenn eine doppelte Nachricht kommt, dass die Nachrichten getrennt werden
             const jsonMessage = JSON.parse(elementEvent);
             const messageBody = JSON.parse(jsonMessage.body);
             if (messageBody.userId === this.authService.user()!.id) {
