@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
 import { AppbarService } from '../shared/appbar.service';
 import { BoardService } from '../shared/board/board.service';
 import { UserService } from '../shared/user/user.service';
@@ -37,6 +37,7 @@ export class BoardComponent implements OnInit, AfterViewInit {
     private snackBar: MatSnackBar,
     private location: Location,
     private dialog: MatDialog,
+    private changeDetectorRef: ChangeDetectorRef,
   ) {
     this.appbarService.updateTitle('Board');
     this.appbarService.setActions([
@@ -92,30 +93,44 @@ export class BoardComponent implements OnInit, AfterViewInit {
         },
         (elementEvent) => {
           try {
-            // TODO: hier noch handeln, wenn eine doppelte Nachricht kommt, dass die Nachrichten getrennt werden
-            const jsonMessage = JSON.parse(elementEvent);
-            const messageBody = JSON.parse(jsonMessage.body);
-            if (messageBody.userId === this.authService.user()!.id) {
-              return;
+            let messages: { messageType: string; body: string }[];
+            try {
+              const jsonMessage = JSON.parse(elementEvent);
+              messages = [jsonMessage];
+            } catch (e) {
+              const separatedMessages: string[] = this.extractIndidualMessages(elementEvent);
+              messages = separatedMessages.map((message, index) => {
+                const jsonMessage = JSON.parse(message);
+                return jsonMessage;
+              });
             }
-            switch (jsonMessage.messageType) {
-              case 'element_created':
-                this.elementService.createElementByEvent(messageBody);
-                break;
-              case 'element_removed':
-                this.elementService.removeElementByEvent(messageBody);
-                break;
-              case 'element_moved':
-                break;
-              case 'element_locked':
-                break;
-              case 'element_unlocked':
-                break;
-              case 'element_updated':
-                break;
-              default: {
-                console.error('Element Event unknown');
-                return;
+            for (const message of messages) {
+              if (message.messageType === 'ERROR') {
+                continue;
+              }
+              const messageBody = JSON.parse(message.body);
+              if (messageBody.userId === this.authService.user()!.id) {
+                continue;
+              }
+              switch (message.messageType) {
+                case 'element_created':
+                  this.elementService.createElementByEvent(messageBody);
+                  break;
+                case 'element_removed':
+                  this.elementService.removeElementByEvent(messageBody);
+                  break;
+                case 'element_moved':
+                  break;
+                case 'element_locked':
+                  break;
+                case 'element_unlocked':
+                  break;
+                case 'element_updated':
+                  break;
+                default: {
+                  console.error('Element Event unknown');
+                  return;
+                }
               }
             }
           } catch (e) {
@@ -162,6 +177,19 @@ export class BoardComponent implements OnInit, AfterViewInit {
       );
     } catch (e) {
       this.snackBar.open('WebTransport closed', 'Ok', defaultSnackbarConfig());
+    }
+  }
+
+  private extractIndidualMessages(messagesString: string): string[] {
+    if (messagesString.length < 1) {
+      return [];
+    }
+    const objectSeparator = '}{';
+    const matchIndex = messagesString.indexOf(objectSeparator);
+    if (matchIndex === -1) {
+      return [messagesString];
+    } else {
+      return [messagesString.substring(0, matchIndex + 1), ...this.extractIndidualMessages(messagesString.slice(matchIndex + 1))];
     }
   }
 
@@ -246,6 +274,7 @@ export class BoardComponent implements OnInit, AfterViewInit {
   public async handleCanvasKeydown(event: KeyboardEvent): Promise<void> {
     if (event.key === 'Backspace') {
       this.elementService.removeSelectionFromCanvas();
+      this.changeDetectorRef.detectChanges();
     }
   }
 }
