@@ -81,6 +81,14 @@ export class ElementService {
     }
   }
 
+  private getElementIdForElement(element: FabricObject): string {
+    const elementId = Array.from(this.currentElements.entries()).find((entry) => entry[1] === element)?.[0];
+    if (!elementId) {
+      throw new ElementNotFoundError();
+    }
+    return elementId;
+  }
+
   public async loadExistingElements(): Promise<void> {
     // TODO: hier weitermachen
   }
@@ -88,7 +96,27 @@ export class ElementService {
   private createElement(path: string, top: number, left: number, fill: string, scaleX: number, scaleY: number, rotation: number): FabricObject {
     const element = new Path(path, { top: top, left: left, fill: fill, scaleX: scaleX, scaleY: scaleY });
     element.rotate(rotation);
-    element.on('removed', (options) => {});
+    element.on('selected', async (event) => {
+      const element = event.target;
+      try {
+        const elementId = this.getElementIdForElement(element);
+        await this.webTransportService.sendElementMessage(
+          // TODO: hier muss gehandelt werden, dass man auf ne antwort vom Webtransport warten muss
+          JSON.stringify(
+            new WebTransportMessage<RemoveElementMessage>({
+              messageType: 'element_lockelement',
+              body: {
+                _id: elementId,
+                boardId: this.boardService.activeBoard()!._id,
+                userId: this.authService.user()!.id,
+              },
+            }),
+          ),
+        );
+      } catch (e) {
+        console.log(e);
+      }
+    });
     return element;
   }
 
@@ -146,7 +174,8 @@ export class ElementService {
 
   public async removeSelectionFromCanvas(): Promise<void> {
     this.checkIfCanvasIsReady();
-    for (const element of this.canvas()!.getActiveObjects()) {
+    const activeObjects = this.canvas()!.getActiveObjects();
+    for (const element of activeObjects) {
       await this.removeElementByUser(element);
     }
   }
@@ -163,10 +192,7 @@ export class ElementService {
 
   public async removeElementByUser(element: FabricObject): Promise<void> {
     this.checkIfCanvasIsReady();
-    const elementId = Array.from(this.currentElements.entries()).find((entry) => entry[1] === element)?.[0];
-    if (!elementId) {
-      throw new ElementNotFoundError();
-    }
+    const elementId = this.getElementIdForElement(element);
     try {
       await this.webTransportService.sendElementMessage(
         JSON.stringify(
