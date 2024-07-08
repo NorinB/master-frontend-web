@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, HostListener, ViewChild } from '@angular/core';
 import { AppbarService } from '../shared/appbar.service';
 import { BoardService } from '../shared/board/board.service';
 import { UserService } from '../shared/user/user.service';
@@ -23,7 +23,7 @@ import { MatButtonModule } from '@angular/material/button';
   templateUrl: './board.component.html',
   styleUrl: './board.component.scss',
 })
-export class BoardComponent implements OnInit, AfterViewInit {
+export class BoardComponent implements AfterViewInit {
   @ViewChild('canvas') private canvasElement: ElementRef<HTMLCanvasElement>;
 
   constructor(
@@ -57,17 +57,19 @@ export class BoardComponent implements OnInit, AfterViewInit {
     });
   }
 
-  ngOnInit(): void {
-    this.initWebTransport();
-    this.initCreatableElements();
-  }
-
   ngAfterViewInit(): void {
     this.elementService.setupCanvas(this.canvasElement.nativeElement);
+    this.initWebTransport();
+    this.initCreatableElements();
+    this.loadExistingElements();
   }
 
   private async initCreatableElements(): Promise<void> {
     await this.elementService.getCreatableElements();
+  }
+
+  private async loadExistingElements(): Promise<void> {
+    await this.elementService.loadExistingElements();
   }
 
   async initWebTransport(): Promise<void> {
@@ -109,8 +111,8 @@ export class BoardComponent implements OnInit, AfterViewInit {
                 continue;
               }
               const messageBody = JSON.parse(message.body);
-              const messageTypeIsResponse = message.messageType.match('response');
-              if (!Array.isArray(messageTypeIsResponse) && messageBody.userId === this.authService.user()!.id) {
+              const messageTypeIsResponse = Array.isArray(message.messageType.match('response'));
+              if (!messageTypeIsResponse && messageBody.userId === this.authService.user()!.id) {
                 continue;
               }
               switch (message.messageType) {
@@ -126,10 +128,15 @@ export class BoardComponent implements OnInit, AfterViewInit {
                   break;
                 case 'response_lockelement':
                 case 'element_locked':
-                  // TODO: hier auch weitermachen mit acutal locking and unlocking
+                  if (!messageTypeIsResponse) {
+                    this.elementService.lockElementByEvent(messageBody);
+                  }
                   break;
                 case 'response_unlockelement':
                 case 'element_unlocked':
+                  if (!messageTypeIsResponse) {
+                    this.elementService.unlockElementByEvent(messageBody);
+                  }
                   break;
                 case 'element_updated':
                   break;

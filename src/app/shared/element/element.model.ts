@@ -1,7 +1,28 @@
 export interface ElementType {
-  _id: string;
   name: string;
   path: string;
+}
+
+export interface ElementPosition {
+  x: number;
+  y: number;
+}
+
+export interface Element {
+  _id: string;
+  selected: false;
+  lockedBy: string | null;
+  x: number;
+  y: number;
+  rotation: number;
+  scaleX: number;
+  scaleY: number;
+  zIndex: number;
+  createdAt: string;
+  text: string;
+  elementType: string;
+  boardId: string;
+  color: string;
 }
 
 export enum Color {

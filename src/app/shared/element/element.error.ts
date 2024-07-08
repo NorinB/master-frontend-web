@@ -9,3 +9,15 @@ export class ElementNotFoundError extends Error {
     super(message);
   }
 }
+
+export class NoCreatableElementsFoundError extends Error {
+  constructor(message = 'Keine erstellenden Elemente gefunden') {
+    super(message);
+  }
+}
+
+export class BoardHasNoElementsError extends Error {
+  constructor(message = 'Board hat keine Elemente bisher') {
+    super(message);
+  }
+}
