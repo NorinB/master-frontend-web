@@ -24,6 +24,7 @@ pub struct InitMessage {
 #[serde(rename_all = "camelCase")]
 pub struct ServerMessage {
     pub message_type: String,
+    pub status: String,
     pub body: String,
 }
 
@@ -133,8 +134,8 @@ impl WebTransportClient {
         ));
 
         match serde_json::from_str::<ServerMessage>(init_response_message) {
-            Ok(init_message) => match init_message.message_type.as_str() {
-                "success" => (),
+            Ok(init_message) => match init_message.status.as_str() {
+                "OK" => (),
                 _ => return Err(JsError::new("")),
             },
             Err(_) => {

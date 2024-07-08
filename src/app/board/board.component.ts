@@ -93,7 +93,7 @@ export class BoardComponent implements OnInit, AfterViewInit {
         },
         (elementEvent) => {
           try {
-            let messages: { messageType: string; body: string }[];
+            let messages: { messageType: string; status: string; body: string }[];
             try {
               const jsonMessage = JSON.parse(elementEvent);
               messages = [jsonMessage];
@@ -105,24 +105,30 @@ export class BoardComponent implements OnInit, AfterViewInit {
               });
             }
             for (const message of messages) {
-              if (message.messageType === 'ERROR') {
+              if (message.status === 'ERROR') {
                 continue;
               }
               const messageBody = JSON.parse(message.body);
-              if (messageBody.userId === this.authService.user()!.id) {
+              const messageTypeIsResponse = message.messageType.match('response');
+              if (!Array.isArray(messageTypeIsResponse) && messageBody.userId === this.authService.user()!.id) {
                 continue;
               }
               switch (message.messageType) {
+                case 'response_createelement':
                 case 'element_created':
                   this.elementService.createElementByEvent(messageBody);
                   break;
+                case 'response_removeelement':
                 case 'element_removed':
                   this.elementService.removeElementByEvent(messageBody);
                   break;
                 case 'element_moved':
                   break;
+                case 'response_lockelement':
                 case 'element_locked':
+                  // TODO: hier auch weitermachen mit acutal locking and unlocking
                   break;
+                case 'response_unlockelement':
                 case 'element_unlocked':
                   break;
                 case 'element_updated':

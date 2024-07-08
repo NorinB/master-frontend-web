@@ -21,6 +21,7 @@
     "@angular/platform-browser": "^18.0.0",
     "@angular/platform-browser-dynamic": "^18.0.0",
     "@angular/router": "^18.0.0",
+    "async-mutex": "^0.5.0",
     "bson-objectid": "^2.0.4",
     "fabric": "^6.0.0",
     "http-status-codes": "^2.3.0",

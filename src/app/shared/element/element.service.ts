@@ -101,10 +101,29 @@ export class ElementService {
       try {
         const elementId = this.getElementIdForElement(element);
         await this.webTransportService.sendElementMessage(
-          // TODO: hier muss gehandelt werden, dass man auf ne antwort vom Webtransport warten muss
           JSON.stringify(
             new WebTransportMessage<RemoveElementMessage>({
               messageType: 'element_lockelement',
+              body: {
+                _id: elementId,
+                boardId: this.boardService.activeBoard()!._id,
+                userId: this.authService.user()!.id,
+              },
+            }),
+          ),
+        );
+      } catch (e) {
+        console.log(e);
+      }
+    });
+    element.on('deselected', async (event) => {
+      const element = event.target;
+      try {
+        const elementId = this.getElementIdForElement(element);
+        await this.webTransportService.sendElementMessage(
+          JSON.stringify(
+            new WebTransportMessage<RemoveElementMessage>({
+              messageType: 'element_unlockelement',
               body: {
                 _id: elementId,
                 boardId: this.boardService.activeBoard()!._id,
@@ -137,8 +156,8 @@ export class ElementService {
     if (!foundElement) {
       throw new ElementNotFoundError();
     }
-    const color = getRandomColor();
-    const element = this.createElement(foundElement.path, 300, 300, color, 1, 1, 0);
+    // const color = getRandomColor();
+    // const element = this.createElement(foundElement.path, 300, 300, color, 1, 1, 0);
     try {
       const elementId = ObjectId().toHexString();
       await this.webTransportService.sendElementMessage(
@@ -160,13 +179,13 @@ export class ElementService {
               text: '',
               elementType: foundElement._id,
               boardId: this.boardService.activeBoard()!._id,
-              color: color,
+              color: getRandomColor(),
             },
           }),
         ),
       );
-      this.currentElements.set(elementId, element);
-      this.canvas()!.add(element);
+      // this.currentElements.set(elementId, element);
+      // this.canvas()!.add(element);
     } catch (e) {
       console.log(e);
     }
@@ -209,7 +228,7 @@ export class ElementService {
     } catch (e) {
       console.log(e);
     }
-    this.currentElements.delete(elementId);
-    this.canvas()!.remove(element);
+    // this.currentElements.delete(elementId);
+    // this.canvas()!.remove(element);
   }
 }

@@ -4,6 +4,7 @@ import { environment } from '../../../environments/environment';
 import { WebTransportConnectionHasBeenClosedError, WebTransportConnectionIsClosedError, WebTransportNotInitializedError } from './webtransport.error';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { defaultSnackbarConfig } from '../snackbar-config';
+import { Mutex } from 'async-mutex';
 
 @Injectable({
   providedIn: 'root',
@@ -15,6 +16,7 @@ export class WebTransportService {
   private webTransportTransport: WebTransportTransport | null = null;
   private boardSendStream: WebTransportSendStream | null = null;
   private elementSendStream: WebTransportSendStream | null = null;
+  private elementSendStreamMutex = new Mutex();
   private activeMemberSendStream: WebTransportSendStream | null = null;
   private clientSendStream: WebTransportSendStream | null = null;
 
@@ -110,12 +112,17 @@ export class WebTransportService {
     if (!this.elementSendStream) {
       throw new WebTransportConnectionIsClosedError();
     }
-    try {
-      await this.elementSendStream.send_message(message);
-    } catch (e) {
-      this.webTransportClient = null;
-      throw new WebTransportConnectionHasBeenClosedError();
-    }
+    await this.elementSendStreamMutex.runExclusive(async () => {
+      try {
+        if (!this.elementSendStream) {
+          throw new WebTransportConnectionIsClosedError();
+        }
+        await this.elementSendStream!.send_message(message);
+      } catch (e) {
+        this.webTransportClient = null;
+        throw new WebTransportConnectionHasBeenClosedError();
+      }
+    });
   }
 
   public async sendActiveMemberMessage(message: string): Promise<void> {

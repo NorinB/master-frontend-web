@@ -1,12 +1,13 @@
 {
   "name": "wasm-webtransport",
+  "type": "module",
   "version": "0.1.0",
   "files": [
     "wasm_webtransport_bg.wasm",
     "wasm_webtransport.js",
     "wasm_webtransport.d.ts"
   ],
-  "module": "wasm_webtransport.js",
+  "main": "wasm_webtransport.js",
   "types": "wasm_webtransport.d.ts",
   "sideEffects": [
     "./snippets/*"
