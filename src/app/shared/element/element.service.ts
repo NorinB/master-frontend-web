@@ -4,7 +4,7 @@ import { WebTransportService } from '../webtransport/webtransport.service';
 // @ts-ignore: Unused parameter
 import { Canvas, Circle, FabricObject, FabricText, Path } from 'fabric';
 import { CanvasNotReadyError, ElementNotFoundError, NoCreatableElementsFoundError } from './element.error';
-import { Element, ElementPosition, ElementType, getRandomColor } from './element.model';
+import { Element, ElementType, getRandomColor } from './element.model';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { StatusCodes } from 'http-status-codes';
 import { UnexpectedApiError } from '../general.error';
@@ -15,9 +15,11 @@ import {
   CreateElementMessage,
   ElementTypeDto,
   LockElementEventMessage,
-  MoveElementMessage,
+  MoveElementEventMessage,
   RemoveElementEventMessage,
   RemoveElementMessage,
+  UpdateElementEventMessage,
+  UpdateElementMessage,
 } from './element.dto';
 import ObjectId from 'bson-objectid';
 import { WebTransportMessage } from '../webtransport/webtransport.dto';
@@ -30,7 +32,7 @@ export class ElementService {
   public canvas: WritableSignal<Canvas | null> = signal(null);
   public creatableElements: WritableSignal<Map<string, ElementType>> = signal(new Map<string, ElementType>());
   private currentElements = new Map<string, FabricObject>();
-  private lastPosition: ElementPosition | null = null;
+  // private lastPosition: ElementPosition | null = null;
 
   constructor(
     private webTransportService: WebTransportService,
@@ -54,19 +56,51 @@ export class ElementService {
         width: canvasElement.parentElement?.clientWidth,
       }),
     );
-    this.canvas()!.on('dragstart', (event) => {});
-    this.canvas()!.on('dragend', async (event) => {
-      const element = event.target;
-      try {
-        const elementId = this.getElementIdForElement(element!);
-        await this.webTransportService.sendElementMessage(
-          // TODO: hier weitermachen
-          JSON.stringify(new WebTransportMessage<MoveElementMessage>({ messageType: 'element_moveelements', body: {} })),
-        );
-      } catch (e) {
-        console.log(e);
-      }
-    });
+    // this.canvas()!.on('mouse:down:before', (event) => {
+    //   if (!event.target) {
+    //     return;
+    //   }
+    //   this.lastPosition = {
+    //     x: event.target!.getX(),
+    //     y: event.target!.getY(),
+    //   };
+    // });
+    // this.canvas()!.on('mouse:up:before', async (event) => {
+    //   if (!event.target) {
+    //     return;
+    //   }
+    //   const element = event.target;
+    //   try {
+    //     const activeElements = this.canvas()!.getActiveObjects();
+    //     let ids: string[] = [];
+    //     for (const activeElement of activeElements) {
+    //       try {
+    //         const id = this.getElementIdForElement(activeElement);
+    //         ids.push(id);
+    //       } catch (e) {
+    //         continue;
+    //       }
+    //     }
+    //     await this.webTransportService.sendElementMessage(
+    //       JSON.stringify(
+    //         new WebTransportMessage<MoveElementMessage>({
+    //           messageType: 'element_moveelements',
+    //           body: {
+    //             ids: ids,
+    //             userId: this.authService.user()!.id,
+    //             boardId: this.boardService.activeBoard()!._id,
+    //             xOffset: element!.getX() - this.lastPosition!.x,
+    //             yOffset: element!.getY() - this.lastPosition!.y,
+    //           },
+    //         }),
+    //       ),
+    //     );
+    //   } catch (e) {
+    //     console.log(e);
+    //   } finally {
+    //     this.lastPosition = null;
+    //   }
+    // });
   }
 
   public async disposeCanvas(): Promise<void> {
@@ -120,11 +154,12 @@ export class ElementService {
 
   public async loadExistingElements(): Promise<void> {
     this.checkIfCanvasIsReady();
+    this.currentElements = new Map<string, FabricObject>();
+    this.canvas()!.clear();
     try {
       const elements = await this.http
         .get<Element[]>(`${this.apiBaseUrl}/board/${this.boardService.activeBoard()!._id}/elements`, { observe: 'response' })
         .toPromise();
-      this.currentElements = new Map<string, FabricObject>();
       for (const element of elements!.body! as Element[]) {
         const elementType = this.creatableElements().get(element.elementType);
         if (!elementType) {
@@ -147,11 +182,54 @@ export class ElementService {
     }
   }
 
+  public async unlockAllElements(): Promise<void> {
+    try {
+      await this.http
+        .put(
+          `${this.apiBaseUrl}/element/multiple/unlock-all?userId=${this.authService.user()?.id}&boardId=${this.boardService.activeBoard()?._id}`,
+          undefined,
+          { observe: 'response' },
+        )
+        .toPromise();
+    } catch (e) {
+      const errorResponse = e as HttpErrorResponse;
+      console.log(errorResponse);
+    }
+  }
+
   private createElement(id: string, path: string, top: number, left: number, fill: string, scaleX: number, scaleY: number, rotation: number): void {
     const element = new Path(path, { top: top, left: left, fill: fill, scaleX: scaleX, scaleY: scaleY });
     element.rotate(rotation);
-    element.on('selected', async (event) => {
+    element.on('modified', async (event) => {
       const element = event.target;
+      try {
+        const elementId = this.getElementIdForElement(element);
+        await this.webTransportService.sendElementMessage(
+          JSON.stringify(
+            new WebTransportMessage<UpdateElementMessage>({
+              messageType: 'element_updateelement',
+              body: {
+                _id: elementId,
+                userId: this.authService.user()!.id,
+                boardId: this.boardService.activeBoard()!._id,
+                scaleX: element.scaleX,
+                scaleY: element.scaleY,
+                x: element.getX(),
+                y: element.getY(),
+                text: undefined,
+                color: element.fill?.toString(),
+                zIndex: undefined,
+                rotation: element.getTotalAngle(),
+              },
+            }),
+          ),
+        );
+      } catch (e) {
+        console.log(e);
+      }
+    });
+    element.on('selected', async (event) => {
+      const element = event.target as FabricObject;
       try {
         const elementId = this.getElementIdForElement(element);
         await this.webTransportService.sendElementMessage(
@@ -245,7 +323,11 @@ export class ElementService {
     this.checkIfCanvasIsReady();
     const activeObjects = this.canvas()!.getActiveObjects();
     for (const element of activeObjects) {
-      await this.removeElementByUser(element);
+      try {
+        await this.removeElementByUser(element);
+      } catch (e) {
+        continue;
+      }
     }
   }
 
@@ -257,6 +339,7 @@ export class ElementService {
     }
     this.currentElements.delete(message._id);
     this.canvas()!.remove(foundElement);
+    this.canvas()!.renderAll();
   }
 
   public async removeElementByUser(element: FabricObject): Promise<void> {
@@ -287,6 +370,7 @@ export class ElementService {
       throw new ElementNotFoundError();
     }
     foundElement.selectable = false;
+    this.canvas()!.renderAll();
   }
 
   public unlockElementByEvent(message: LockElementEventMessage): void {
@@ -296,5 +380,49 @@ export class ElementService {
       throw new ElementNotFoundError();
     }
     foundElement.selectable = true;
+    this.canvas()!.renderAll();
+  }
+
+  public moveElementsByEvent(message: MoveElementEventMessage): void {
+    this.checkIfCanvasIsReady();
+    const element = this.currentElements.get(message._id);
+    if (!element) {
+      return;
+    }
+    element.setX(message.xOffset + element.getX());
+    element.setY(message.yOffset + element.getY());
+    // BUG: irgendwas beim Senden der Coors wird falsch im Server gespeichert
+    // BUG: Syntaxerror bei JSON parsing noch
+    this.canvas()!.renderAll();
+  }
+
+  public updateElementByEvent(message: UpdateElementEventMessage): void {
+    this.checkIfCanvasIsReady();
+    const element = this.currentElements.get(message._id);
+    if (!element) {
+      return;
+    }
+    if (typeof message.rotation === 'number') {
+      element.rotate(message.rotation);
+    }
+    if (typeof message.zIndex === 'number') {
+      this.canvas()!.moveObjectTo(element, message.zIndex);
+    }
+    if (typeof message.scaleX === 'number') {
+      element.scaleX = message.scaleX;
+    }
+    if (typeof message.scaleY === 'number') {
+      element.scaleY = message.scaleY;
+    }
+    if (message.color) {
+      element.fill = message.color;
+    }
+    if (typeof message.x === 'number') {
+      element.setX(message.x);
+    }
+    if (typeof message.y === 'number') {
+      element.setY(message.y);
+    }
+    this.canvas()!.renderAll();
   }
 }

@@ -44,6 +44,8 @@ export class BoardComponent implements AfterViewInit {
       {
         icon: 'refresh',
         action: async () => {
+          await this.elementService.loadExistingElements();
+          await this.elementService.unlockAllElements();
           this.initWebTransport();
         },
       },
@@ -59,9 +61,9 @@ export class BoardComponent implements AfterViewInit {
 
   ngAfterViewInit(): void {
     this.elementService.setupCanvas(this.canvasElement.nativeElement);
-    this.initWebTransport();
     this.initCreatableElements();
     this.loadExistingElements();
+    this.initWebTransport();
   }
 
   private async initCreatableElements(): Promise<void> {
@@ -124,7 +126,11 @@ export class BoardComponent implements AfterViewInit {
                 case 'element_removed':
                   this.elementService.removeElementByEvent(messageBody);
                   break;
+                case 'response_moveelements':
                 case 'element_moved':
+                  if (!messageTypeIsResponse) {
+                    this.elementService.moveElementsByEvent(messageBody);
+                  }
                   break;
                 case 'response_lockelement':
                 case 'element_locked':
@@ -138,10 +144,14 @@ export class BoardComponent implements AfterViewInit {
                     this.elementService.unlockElementByEvent(messageBody);
                   }
                   break;
+                case 'response_updateelement':
                 case 'element_updated':
+                  if (!messageTypeIsResponse) {
+                    this.elementService.updateElementByEvent(messageBody);
+                  }
                   break;
                 default: {
-                  console.error('Element Event unknown');
+                  console.error('Element Event unknown: ', message.messageType);
                   return;
                 }
               }
@@ -222,7 +232,7 @@ export class BoardComponent implements AfterViewInit {
     }
     try {
       await this.boardService.addMember(user._id);
-      this.snackBar.open(`${user.name} hinzugefügt 🎉`);
+      this.snackBar.open(`${user.name} hinzugefügt 🎉`, undefined, defaultSnackbarConfig());
     } catch (e) {
       let message: string;
       if (e instanceof BoardNotFoundError || e instanceof UserAlreadyPartOfThisBoardError || e instanceof NotInABoardCurrentlyError) {
@@ -250,7 +260,7 @@ export class BoardComponent implements AfterViewInit {
     }
     try {
       await this.boardService.removeMember(userId);
-      this.snackBar.open(`${user.name} entfernt 👋`);
+      this.snackBar.open(`${user.name} entfernt 👋`, undefined, defaultSnackbarConfig());
     } catch (e) {
       let message: string;
       if (e instanceof BoardNotFoundError || e instanceof UserNotPartOfThisBoardError || e instanceof NotInABoardCurrentlyError) {

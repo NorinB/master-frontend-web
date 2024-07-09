@@ -60,13 +60,40 @@ export interface MoveElementMessage {
   ids: string[];
   userId: string;
   boardId: string;
-  xOffset: string;
-  yOffset: string;
+  xOffset: number;
+  yOffset: number;
 }
 
 export interface MoveElementEventMessage {
   _id: string;
   userId: string;
-  xOffset: string;
-  yOffset: string;
+  xOffset: number;
+  yOffset: number;
+}
+
+export interface UpdateElementMessage {
+  _id: string;
+  userId: string;
+  boardId: string;
+  x?: number;
+  y?: number;
+  rotation?: number;
+  scaleX?: number;
+  scaleY?: number;
+  zIndex?: number;
+  text?: string;
+  color?: string;
+}
+
+export interface UpdateElementEventMessage {
+  _id: string;
+  userId: string;
+  x?: number;
+  y?: number;
+  rotation?: number;
+  scaleX?: number;
+  scaleY?: number;
+  zIndex?: number;
+  text?: string;
+  color?: string;
 }
