@@ -31,7 +31,7 @@ export class ElementService {
   private apiBaseUrl = environment.apiBaseUrl;
   public canvas: WritableSignal<Canvas | null> = signal(null);
   public creatableElements: WritableSignal<Map<string, ElementType>> = signal(new Map<string, ElementType>());
-  private currentElements = new Map<string, FabricObject>();
+  public currentElements = new Map<string, FabricObject>();
   // private lastPosition: ElementPosition | null = null;
 
   constructor(
@@ -197,8 +197,10 @@ export class ElementService {
     }
   }
 
-  private createElement(id: string, path: string, top: number, left: number, fill: string, scaleX: number, scaleY: number, rotation: number): void {
-    const element = new Path(path, { top: top, left: left, fill: fill, scaleX: scaleX, scaleY: scaleY });
+  private createElement(id: string, path: string, x: number, y: number, fill: string, scaleX: number, scaleY: number, rotation: number): void {
+    const element = new Path(path, { fill: fill, scaleX: scaleX, scaleY: scaleY });
+    element.setX(x);
+    element.setY(y);
     element.rotate(rotation);
     element.on('modified', async (event) => {
       const element = event.target;
@@ -391,8 +393,6 @@ export class ElementService {
     }
     element.setX(message.xOffset + element.getX());
     element.setY(message.yOffset + element.getY());
-    // BUG: irgendwas beim Senden der Coors wird falsch im Server gespeichert
-    // BUG: Syntaxerror bei JSON parsing noch
     this.canvas()!.renderAll();
   }
 
