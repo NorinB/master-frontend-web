@@ -3,7 +3,7 @@ import { AuthComponent } from './auth/auth.component';
 import { BoardSelectionComponent } from './board-selection/board-selection.component';
 import { inject } from '@angular/core';
 import { AuthService } from './shared/auth/auth.service';
-import { Observable, tap } from 'rxjs';
+import { Observable, from, of, switchMap, tap } from 'rxjs';
 import { LoggedInUser } from './shared/auth/auth.model';
 import { BoardComponent } from './board/board.component';
 import { BoardService } from './shared/board/board.service';
@@ -19,6 +19,7 @@ export const routes: Routes = [
   {
     path: 'auth',
     component: AuthComponent,
+    canActivate: [redirectIfLoggedIn],
   },
   {
     path: 'board-selection',
@@ -28,10 +29,36 @@ export const routes: Routes = [
   {
     path: 'board/:boardId',
     component: BoardComponent,
-    canActivate: [checkIfLoggedIn, checkIfPartOfBoard],
+    canActivate: [checkIfLoggedInAndPartOfBoard],
     canDeactivate: [removeActiveMemberember, closeWebTransport, disposeCanvas],
   },
 ];
+
+function redirectIfLoggedIn(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> | boolean {
+  const authService = inject(AuthService);
+  let storedClientJson: LoggedInUser | null;
+  const router = inject(Router);
+  try {
+    storedClientJson = authService.getValidStoredUser();
+  } catch (e) {
+    return true;
+  }
+  if (!storedClientJson) {
+    return true;
+  }
+  try {
+    return authService.clientIsLoggedIn(storedClientJson.id, storedClientJson.clientId).pipe(
+      tap((loggedIn) => {
+        if (loggedIn) {
+          router.navigate(['board-selection']);
+        }
+      }),
+    );
+  } catch (e) {
+    console.log(e);
+    return true;
+  }
+}
 
 function removeActiveMemberember(
   _: any,
@@ -62,22 +89,48 @@ function disposeCanvas(): boolean {
   return true;
 }
 
-function checkIfPartOfBoard(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> | boolean {
+function checkIfLoggedInAndPartOfBoard(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> | boolean {
   if (!route.params['boardId']) {
     return false;
   }
-  const boardService = inject(BoardService);
+  const authService = inject(AuthService);
   const router = inject(Router);
+  const boardService = inject(BoardService);
+  let storedClientJson: LoggedInUser | null;
   try {
-    return boardService.userIsPartOfBoard(route.params['boardId']).pipe(
-      tap((isPart) => {
-        if (!isPart) {
-          router.navigate(['board-selection']);
+    storedClientJson = authService.getValidStoredUser();
+  } catch (e) {
+    router.navigate(['auth']);
+    return false;
+  }
+  if (!storedClientJson) {
+    router.navigate(['auth']);
+    return false;
+  }
+  try {
+    return authService.clientIsLoggedIn(storedClientJson.id, storedClientJson.clientId).pipe(
+      switchMap((loggedIn) => {
+        if (!loggedIn) {
+          router.navigate(['auth']);
+          return of(false);
         }
+        return boardService.userIsPartOfBoard(route.params['boardId']).pipe(
+          tap((isPart) => {
+            if (!isPart) {
+              router.navigate(['board-selection']);
+            }
+            return from(boardService.getBoardById(route.params['boardId'])).pipe(
+              tap((board) => {
+                boardService.setActiveBoard(board);
+              }),
+            );
+          }),
+        );
       }),
     );
   } catch (e) {
     console.log(e);
+    router.navigate(['auth']);
     return false;
   }
 }

@@ -71,6 +71,14 @@ export class AuthService {
         }
         switch (response.status) {
           case StatusCodes.OK:
+            const storedUser = this.getValidStoredUser()!;
+            this._user.set({
+              id: userId,
+              clientId: response.body!['clientId'],
+              name: storedUser.name,
+              email: storedUser.email,
+              deviceType: DeviceType.Web,
+            });
             return of(response.body!['clientId'] === clientId);
           default: {
             return of(false);
