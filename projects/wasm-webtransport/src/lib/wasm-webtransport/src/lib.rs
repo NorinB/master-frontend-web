@@ -220,7 +220,7 @@ impl WebTransportClient {
 
                     let message = &JsString::from_str(message).unwrap();
                     let _ = board_callback.call1(this_context, message);
-                    console::log(&Array::of1(message));
+                    // console::log(&Array::of1(message));
                 }
             } => {
                 console::error(&Array::of1(
@@ -255,7 +255,7 @@ impl WebTransportClient {
 
                     let message = &JsString::from_str(message).unwrap();
                     let _ = element_callback.call1(this_context, message);
-                    console::log(&Array::of1(message));
+                    // console::log(&Array::of1(message));
                 }
             } => {
                 console::error(&Array::of1(
@@ -290,7 +290,7 @@ impl WebTransportClient {
 
                     let message = &JsString::from_str(message).unwrap();
                     let _ = active_member_callback.call1(this_context, message);
-                    console::log(&Array::of1(message));
+                    // console::log(&Array::of1(message));
                 }
             } => {
                 console::error(&Array::of1(
@@ -325,7 +325,7 @@ impl WebTransportClient {
 
                     let message = &JsString::from_str(message).unwrap();
                     let _ = client_callback.call1(this_context, message);
-                    console::log(&Array::of1(message));
+                    // console::log(&Array::of1(message));
                 }
             } => {
                 console::error(&Array::of1(
