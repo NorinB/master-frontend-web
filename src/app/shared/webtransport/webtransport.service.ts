@@ -18,6 +18,7 @@ export class WebTransportService {
   private elementSendStream: WebTransportSendStream | null = null;
   private elementSendStreamMutex = new Mutex();
   private activeMemberSendStream: WebTransportSendStream | null = null;
+  private activeMemberSendStreamMutex = new Mutex();
   private clientSendStream: WebTransportSendStream | null = null;
 
   constructor(private snackBar: MatSnackBar) {}
@@ -130,11 +131,16 @@ export class WebTransportService {
     if (!this.activeMemberSendStream) {
       throw new WebTransportConnectionIsClosedError();
     }
-    try {
-      await this.activeMemberSendStream.send_message(message);
-    } catch (e) {
-      this.webTransportClient = null;
-      throw new WebTransportConnectionHasBeenClosedError();
-    }
+    await this.activeMemberSendStreamMutex.runExclusive(async () => {
+      try {
+        if (!this.activeMemberSendStream) {
+          throw new WebTransportConnectionIsClosedError();
+        }
+        await this.activeMemberSendStream.send_message(message);
+      } catch (e) {
+        this.webTransportClient = null;
+        throw new WebTransportConnectionHasBeenClosedError();
+      }
+    });
   }
 }

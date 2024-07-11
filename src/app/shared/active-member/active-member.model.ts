@@ -5,3 +5,8 @@ export interface ActiveMember {
   x: number;
   y: number;
 }
+
+export interface CursorPosition {
+  x: number;
+  y: number;
+}

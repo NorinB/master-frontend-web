@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, HostListener, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, HostListener, ViewChild } from '@angular/core';
 import { AppbarService } from '../shared/appbar.service';
 import { BoardService } from '../shared/board/board.service';
 import { UserService } from '../shared/user/user.service';
@@ -15,6 +15,9 @@ import { WebTransportService } from '../shared/webtransport/webtransport.service
 import { AuthService } from '../shared/auth/auth.service';
 import { ElementService } from '../shared/element/element.service';
 import { MatButtonModule } from '@angular/material/button';
+import { Router } from '@angular/router';
+import { ActiveMemberService } from '../shared/active-member/active-member.service';
+import { CanvasService } from '../shared/canvas/canvas.service';
 
 @Component({
   selector: 'board',
@@ -31,13 +34,15 @@ export class BoardComponent implements AfterViewInit {
     // @ts-ignore
     private authService: AuthService,
     public boardService: BoardService,
+    private canvasService: CanvasService,
     public elementService: ElementService,
+    private activeMemberService: ActiveMemberService,
     private userService: UserService,
     private webTransportService: WebTransportService,
     private snackBar: MatSnackBar,
     private location: Location,
     private dialog: MatDialog,
-    private changeDetectorRef: ChangeDetectorRef,
+    private router: Router,
   ) {
     this.appbarService.updateTitle('Board');
     this.appbarService.setActions([
@@ -46,6 +51,7 @@ export class BoardComponent implements AfterViewInit {
         action: async () => {
           await this.elementService.loadExistingElements();
           await this.elementService.unlockAllElements();
+          await this.activeMemberService.loadExistingActiveMembers();
           this.initWebTransport();
         },
       },
@@ -60,9 +66,11 @@ export class BoardComponent implements AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    this.elementService.setupCanvas(this.canvasElement.nativeElement);
+    this.canvasService.setupCanvas(this.canvasElement.nativeElement);
     this.initCreatableElements();
     this.loadExistingElements();
+    this.loadActiveMembers();
+    this.activeMemberService.setupCursorSubscription();
     this.initWebTransport();
   }
 
@@ -72,6 +80,10 @@ export class BoardComponent implements AfterViewInit {
 
   private async loadExistingElements(): Promise<void> {
     await this.elementService.loadExistingElements();
+  }
+
+  private async loadActiveMembers(): Promise<void> {
+    await this.activeMemberService.loadExistingActiveMembers();
   }
 
   async initWebTransport(): Promise<void> {
@@ -162,17 +174,49 @@ export class BoardComponent implements AfterViewInit {
         },
         (activeMemberEvent) => {
           try {
-            const jsonMessage = JSON.parse(activeMemberEvent);
-            switch (jsonMessage.messageType) {
-              case 'activemember_created':
-                break;
-              case 'activemember_removed':
-                break;
-              case 'activemember_positionupdated':
-                break;
-              default: {
-                console.error('Active Member Event unknown');
-                return;
+            let messages: { messageType: string; status: string; body: string }[];
+            try {
+              const jsonMessage = JSON.parse(activeMemberEvent);
+              messages = [jsonMessage];
+            } catch (e) {
+              const separatedMessages: string[] = this.extractIndidualMessages(activeMemberEvent);
+              messages = separatedMessages.map((message, index) => {
+                const jsonMessage = JSON.parse(message);
+                return jsonMessage;
+              });
+            }
+            for (const message of messages) {
+              if (message.status === 'ERROR') {
+                continue;
+              }
+              const messageBody = JSON.parse(message.body);
+              const messageTypeIsResponse = Array.isArray(message.messageType.match('response'));
+              if (!messageTypeIsResponse && messageBody.userId === this.authService.user()!.id) {
+                continue;
+              }
+              switch (message.messageType) {
+                case 'response_createactivemember':
+                case 'activemember_created':
+                  if (!messageTypeIsResponse) {
+                    this.activeMemberService.addActiveMemberByEvent(messageBody);
+                  }
+                  break;
+                case 'response_removeactivemember':
+                case 'activemember_removed':
+                  if (!messageTypeIsResponse) {
+                    this.activeMemberService.removeActiveMemberByEvent(messageBody);
+                  }
+                  break;
+                case 'response_updateposition':
+                case 'activemember_positionupdated':
+                  if (!messageTypeIsResponse) {
+                    this.activeMemberService.updateActiveMemberPosition(messageBody);
+                  }
+                  break;
+                default: {
+                  console.error('Active Member Event unknown: ', message.messageType);
+                  return;
+                }
               }
             }
           } catch (e) {
@@ -181,15 +225,32 @@ export class BoardComponent implements AfterViewInit {
         },
         (clientEvent) => {
           try {
-            const jsonMessage = JSON.parse(clientEvent);
-            switch (jsonMessage) {
-              case 'client_removed':
-                break;
-              case 'client_changed':
-                break;
-              default: {
-                console.error('Client Event unknown');
-                return;
+            let messages: { messageType: string; status: string; body: string }[];
+            try {
+              const jsonMessage = JSON.parse(clientEvent);
+              messages = [jsonMessage];
+            } catch (e) {
+              const separatedMessages: string[] = this.extractIndidualMessages(clientEvent);
+              messages = separatedMessages.map((message, index) => {
+                const jsonMessage = JSON.parse(message);
+                return jsonMessage;
+              });
+            }
+            for (const message of messages) {
+              switch (message.messageType) {
+                case 'client_removed':
+                case 'client_changed':
+                  const messageBody = JSON.parse(message.body);
+                  if (this.authService.user()?.clientId !== messageBody.clientId) {
+                    this.router.navigate(['board-selection']);
+                    this.canvasService.dispose();
+                    this.webTransportService.closeConnection();
+                  }
+                  break;
+                default: {
+                  console.error('Client Event unknown');
+                  return;
+                }
               }
             }
           } catch (e) {
@@ -290,14 +351,13 @@ export class BoardComponent implements AfterViewInit {
 
   @HostListener('window:resize', ['$event'])
   public handleWindowResize(event) {
-    this.elementService.handleWindowResize(event);
+    this.canvasService.handleWindowResize(event);
   }
 
   @HostListener('body:keydown', ['$event'])
   public async handleCanvasKeydown(event: KeyboardEvent): Promise<void> {
     if (event.key === 'Backspace') {
       this.elementService.removeSelectionFromCanvas();
-      this.changeDetectorRef.detectChanges();
     }
   }
 }

@@ -9,7 +9,7 @@ import { BoardComponent } from './board/board.component';
 import { BoardService } from './shared/board/board.service';
 import { ActiveMemberService } from './shared/active-member/active-member.service';
 import { WebTransportService } from './shared/webtransport/webtransport.service';
-import { ElementService } from './shared/element/element.service';
+import { CanvasService } from './shared/canvas/canvas.service';
 
 export const routes: Routes = [
   {
@@ -84,8 +84,8 @@ function closeWebTransport(): MaybeAsync<GuardResult> {
 }
 
 function disposeCanvas(): boolean {
-  const elementService = inject(ElementService);
-  elementService.disposeCanvas();
+  const canvasService = inject(CanvasService);
+  canvasService.dispose();
   return true;
 }
 
