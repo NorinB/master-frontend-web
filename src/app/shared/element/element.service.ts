@@ -123,8 +123,61 @@ export class ElementService {
     element.setX(x);
     element.setY(y);
     element.rotate(rotation);
-    element.on('modified', async (event) => {
-      const element = event.target;
+    element.on('rotating', async (event) => {
+      try {
+        const elementId = this.getElementIdForElement(element);
+        await this.webTransportService.sendElementMessage(
+          JSON.stringify(
+            new WebTransportMessage<UpdateElementMessage>({
+              messageType: 'element_updateelement',
+              body: {
+                _id: elementId,
+                userId: this.authService.user()!.id,
+                boardId: this.boardService.activeBoard()!._id,
+                scaleX: element.scaleX,
+                scaleY: element.scaleY,
+                x: element.getX(),
+                y: element.getY(),
+                text: undefined,
+                color: element.fill?.toString(),
+                zIndex: undefined,
+                rotation: element.getTotalAngle(),
+              },
+            }),
+          ),
+        );
+      } catch (e) {
+        console.log(e);
+      }
+    });
+    element.on('scaling', async (event) => {
+      try {
+        const elementId = this.getElementIdForElement(element);
+        await this.webTransportService.sendElementMessage(
+          JSON.stringify(
+            new WebTransportMessage<UpdateElementMessage>({
+              messageType: 'element_updateelement',
+              body: {
+                _id: elementId,
+                userId: this.authService.user()!.id,
+                boardId: this.boardService.activeBoard()!._id,
+                scaleX: element.scaleX,
+                scaleY: element.scaleY,
+                x: element.getX(),
+                y: element.getY(),
+                text: undefined,
+                color: element.fill?.toString(),
+                zIndex: undefined,
+                rotation: element.getTotalAngle(),
+              },
+            }),
+          ),
+        );
+      } catch (e) {
+        console.log(e);
+      }
+    });
+    element.on('moving', async (event) => {
       try {
         const elementId = this.getElementIdForElement(element);
         await this.webTransportService.sendElementMessage(
