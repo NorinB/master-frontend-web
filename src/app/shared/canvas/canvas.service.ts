@@ -21,6 +21,7 @@ export class CanvasService {
 
   public addElement(element: FabricObject): void {
     this.canvas()?.add(element);
+    this.canvas()?.moveObjectTo(element, 1);
   }
 
   public getActiveObjects(): FabricObject[] {
@@ -46,6 +47,7 @@ export class CanvasService {
     const cursor = new Path(cursorPath, { left: x, top: y, fill: getRandomColor() });
     cursor.scale(3);
     this.canvas()!.add(cursor);
+    this.canvas()!.bringObjectToFront(cursor);
     return cursor;
   }
 
