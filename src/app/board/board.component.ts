@@ -117,10 +117,11 @@ export class BoardComponent implements AfterViewInit {
               const separatedMessages: string[] = this.extractIndidualMessages(elementEvent);
               messages = separatedMessages.map((message, index) => {
                 try {
+                  console.log('New message: ', message);
                   const jsonMessage = JSON.parse(message);
                   return jsonMessage;
                 } catch (e) {
-                  console.log(message);
+                  console.error(message);
                   throw e;
                 }
               });

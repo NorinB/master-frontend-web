@@ -10,7 +10,7 @@
     @if (isRegistration) {
       <mat-form-field>
         <mat-label>E-Mail</mat-label>
-        <input matInput formControlName="email" />
+        <input id="email-input" matInput formControlName="email" />
       </mat-form-field>
     }
     <mat-form-field>
@@ -20,13 +20,13 @@
           oder E-Mail
         }
       </mat-label>
-      <input matInput formControlName="nameOrEmail" />
+      <input id="name-or-email-input" matInput formControlName="nameOrEmail" />
     </mat-form-field>
     <mat-form-field>
       <mat-label>Passwort</mat-label>
-      <input matInput type="password" formControlName="password" />
+      <input0 id="password-input" matInput type="password" formControlName="password" />
     </mat-form-field>
-    <button class="submit-button" mat-flat-button type="submit">
+    <button id="submit-button" class="submit-button" mat-flat-button type="submit">
       @if (isRegistration) {
         Registrieren
       } @else {
