@@ -123,6 +123,26 @@ export class ElementService {
     element.setX(x);
     element.setY(y);
     element.rotate(rotation);
+    element.on('mousedown', async (event) => {
+      const element = event.target as FabricObject;
+      try {
+        const elementId = this.getElementIdForElement(element);
+        await this.webTransportService.sendElementMessage(
+          JSON.stringify(
+            new WebTransportMessage<RemoveElementMessage>({
+              messageType: 'element_lockelement',
+              body: {
+                _id: elementId,
+                boardId: this.boardService.activeBoard()!._id,
+                userId: this.authService.user()!.id,
+              },
+            }),
+          ),
+        );
+      } catch (e) {
+        console.log(e);
+      }
+    });
     element.on('rotating', async (event) => {
       try {
         const elementId = this.getElementIdForElement(element);
