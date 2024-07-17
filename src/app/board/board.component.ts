@@ -117,7 +117,6 @@ export class BoardComponent implements AfterViewInit {
               const separatedMessages: string[] = this.extractIndidualMessages(elementEvent);
               messages = separatedMessages.map((message, index) => {
                 try {
-                  console.log('New message: ', message);
                   const jsonMessage = JSON.parse(message);
                   return jsonMessage;
                 } catch (e) {
@@ -127,6 +126,7 @@ export class BoardComponent implements AfterViewInit {
               });
             }
             for (const message of messages) {
+              // console.log('New element message: ', message);
               if (message.status === 'ERROR') {
                 continue;
               }
@@ -192,6 +192,7 @@ export class BoardComponent implements AfterViewInit {
               });
             }
             for (const message of messages) {
+              // console.log('New active member message: ', message);
               if (message.status === 'ERROR') {
                 continue;
               }

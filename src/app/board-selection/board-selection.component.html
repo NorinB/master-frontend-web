@@ -5,7 +5,7 @@
 } @else {
   <div class="board-list-container">
     <div class="board-list">
-      @for (board of boards(); track $index) {
+      @for (board of boards(); track $index; let i = $index) {
         <div class="board-list-item">
           <div>
             <p class="board-list-item-name">{{ board.name }}</p>
@@ -16,7 +16,7 @@
             </p>
           </div>
           <span class="spacer"></span>
-          <button mat-mini-fab (click)="enterBoard(board._id)">
+          <button [id]="'enter-board-button-' + i" mat-mini-fab (click)="enterBoard(board._id)">
             <mat-icon>chevron_right</mat-icon>
           </button>
         </div>
