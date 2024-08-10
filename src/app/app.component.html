@@ -1,6 +1,6 @@
 <mat-toolbar>
   @if (appbarService.backAction()) {
-    <button mat-icon-button (click)="appbarService.backAction()!()">
+    <button id="back-button" mat-icon-button (click)="appbarService.backAction()!()">
       <mat-icon>arrow_back</mat-icon>
     </button>
   }
@@ -13,7 +13,7 @@
     </button>
   }
   @if (authService.user()) {
-    <button mat-icon-button (click)="logout()">
+    <button id="logout-button" mat-icon-button (click)="logout()">
       <mat-icon>logout</mat-icon>
     </button>
   }
