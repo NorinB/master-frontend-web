@@ -26,6 +26,10 @@ serde = { version = "1.0.203", features = [ "derive" ] }
 serde-wasm-bindgen = "0.6.5"
 console_error_panic_hook = "0.1.7"
 
+[dependencies.web-transport-wasm]
+git = "https://github.com/kixelated/web-transport-rs.git"
+branch = "main"
+
 [features]
 default = []
 web_sys_unstable_apis = []
