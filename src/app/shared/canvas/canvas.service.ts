@@ -60,6 +60,7 @@ export class CanvasService {
         width: canvasElement.parentElement?.clientWidth,
       }),
     );
+    this.canvas()!.selection = false;
   }
 
   public async dispose(): Promise<void> {

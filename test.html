@@ -1,19 +1,21 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>test WebTransport</title>
+  </head>
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>test WebTransport</title>
-</head>
+  <body>
+    <script src="test.js"></script>
+    <button onclick="testWebTransport()">Start WebTransport</button>
+    <button onclick="testBoardMessage()">Test Board</button>
+    <button onclick="testActiveMemberMessage()">Test Active Member</button>
+    <button onclick="testElementMessage()">Test Element</button>
+    <button onclick="testClientMessage()">Test Client</button>
 
-<body>
-  <script src="test.js"></script>
-  <button onclick="testWebTransport()">Start WebTransport</button>
-  <button onclick="testBoardMessage()">Test Board</button>
-  <button onclick="testActiveMemberMessage()">Test Active Member</button>
-  <button onclick="testElementMessage()">Test Element</button>
-  <button onclick="testClientMessage()">Test Client</button>
-</body>
-
+    <div>
+      <button onclick="testWebSocket()">Test WebSocket</button>
+    </div>
+  </body>
 </html>

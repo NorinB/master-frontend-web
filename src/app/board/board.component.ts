@@ -47,6 +47,7 @@ export class BoardComponent implements AfterViewInit {
     this.appbarService.updateTitle('Board');
     this.appbarService.setActions([
       {
+        buttonId: 'button-refresh',
         icon: 'refresh',
         action: async () => {
           await this.elementService.loadExistingElements();
@@ -56,6 +57,7 @@ export class BoardComponent implements AfterViewInit {
         },
       },
       {
+        buttonId: 'button-member-add',
         icon: 'person_add',
         action: this.openAddMemberDialog.bind(this),
       },

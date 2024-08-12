@@ -8,7 +8,7 @@
   <span class="spacer"></span>
   <!-- TODO: add member list here, maybe with ng-template-->
   @for (action of appbarService.actions(); track $index) {
-    <button mat-icon-button (click)="action.action()">
+    <button [id]="action.buttonId" mat-icon-button (click)="action.action()">
       <mat-icon>{{ action.icon }}</mat-icon>
     </button>
   }

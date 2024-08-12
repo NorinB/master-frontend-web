@@ -1,6 +1,7 @@
 import { Injectable, WritableSignal, signal } from '@angular/core';
 
 export interface AppbarAction {
+  buttonId: string;
   icon: string;
   action: Function;
 }

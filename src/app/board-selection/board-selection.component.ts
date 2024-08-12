@@ -37,6 +37,7 @@ export class BoardSelectionComponent implements OnInit {
     this.appbarService.updateTitle('Boardauswahl');
     this.appbarService.setActions([
       {
+        buttonId: 'button-refresh',
         icon: 'refresh',
         action: this.updateBoardsWithUser.bind(this),
       },
