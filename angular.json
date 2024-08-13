@@ -31,7 +31,8 @@
               {
                 "glob": "**/*.wasm",
                 "input": "projects/wasm-webtransport/src/lib/wasm-webtransport/pkg"
-              }
+              },
+              "./src/app/certificates/public.pem"
             ],
             "styles": ["@angular/material/prebuilt-themes/azure-blue.css", "src/styles.scss"],
             "scripts": []
