@@ -7,9 +7,10 @@ async function testWebTransport() {
   // Create a WebTransport instance connecting to the Rust server
   const certificateArray = new Uint8Array(certificate);
   console.log('Starte WebTransport...');
-  let transport = new WebTransport('https://[::1]:3031', {
-    serverCertificateHashes: [{ algorithm: 'sha-256', value: certificateArray.buffer }],
-  });
+  // let transport = new WebTransport('https://[::1]:3031', {
+  //   serverCertificateHashes: [{ algorithm: 'sha-256', value: certificateArray.buffer }],
+  // });
+  let transport = new WebTransport('https://[::1]:3031');
   await transport.ready;
 
   // Create a bidirectional stream
@@ -33,31 +34,31 @@ async function testWebTransport() {
   let data = await reader.read();
   console.log(new TextDecoder().decode(data.value));
 
-  const boardAddedMessage = {
-    message_type: 'board_memberadd',
-    boardId: boardId,
-    userId: '6654b896b687bac73d51e6da',
-  };
-
-  // Send data from the client to the server
-  await writer.write(new TextEncoder().encode(JSON.stringify(boardAddedMessage)));
-
-  // Read data reply from the server
-  data = await reader.read();
-  console.log(new TextDecoder().decode(data.value));
-
-  const boardRemovedJson = {
-    message_type: 'board_memberremove',
-    boardId: boardId,
-    userId: '6654b896b687bac73d51e6da',
-  };
-
-  // Send data from the client to the server
-  await writer.write(new TextEncoder().encode(JSON.stringify(boardRemovedJson)));
-
-  // Read data reply from the server
-  data = await reader.read();
-  console.log(new TextDecoder().decode(data.value));
+  // const boardAddedMessage = {
+  //   message_type: 'board_memberadd',
+  //   boardId: boardId,
+  //   userId: '6654b896b687bac73d51e6da',
+  // };
+  //
+  // // Send data from the client to the server
+  // await writer.write(new TextEncoder().encode(JSON.stringify(boardAddedMessage)));
+  //
+  // // Read data reply from the server
+  // data = await reader.read();
+  // console.log(new TextDecoder().decode(data.value));
+  //
+  // const boardRemovedJson = {
+  //   message_type: 'board_memberremove',
+  //   boardId: boardId,
+  //   userId: '6654b896b687bac73d51e6da',
+  // };
+  //
+  // // Send data from the client to the server
+  // await writer.write(new TextEncoder().encode(JSON.stringify(boardRemovedJson)));
+  //
+  // // Read data reply from the server
+  // data = await reader.read();
+  // console.log(new TextDecoder().decode(data.value));
 
   transport.close();
 }

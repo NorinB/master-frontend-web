@@ -5,6 +5,7 @@ import { WebTransportConnectionHasBeenClosedError, WebTransportConnectionIsClose
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { defaultSnackbarConfig } from '../snackbar-config';
 import { Mutex } from 'async-mutex';
+import { Observable, Subscription, interval } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -20,6 +21,10 @@ export class WebTransportService {
   private activeMemberSendStream: WebTransportSendStream | null = null;
   private activeMemberSendStreamMutex = new Mutex();
   private clientSendStream: WebTransportSendStream | null = null;
+
+  private eventCounter = 0;
+  private samplingIntervalSubject: Observable<number> = interval(1000);
+  private samplingIntervalSubscription: Subscription | null = null;
 
   constructor(private snackBar: MatSnackBar) {}
 
@@ -53,7 +58,7 @@ export class WebTransportService {
     console.log('Länge der Bytes: ', bytes.length);
     bytes;
     return new Uint8Array([
-      90, 242, 129, 206, 115, 222, 118, 21, 220, 230, 195, 113, 41, 68, 34, 24, 105, 94, 86, 89, 104, 78, 20, 162, 3, 193, 202, 102, 126, 209, 79, 93,
+      2, 225, 198, 48, 28, 86, 252, 128, 144, 22, 124, 84, 15, 71, 190, 212, 237, 248, 135, 247, 173, 68, 69, 108, 139, 181, 53, 215, 228, 15, 14, 105,
     ]);
   }
 
@@ -101,6 +106,27 @@ export class WebTransportService {
       this.snackBar.open(error.message, 'Ok', defaultSnackbarConfig());
       throw new WebTransportConnectionIsClosedError();
     }
+  }
+
+  public increaseSamplingCounter(): void {
+    this.eventCounter++;
+  }
+
+  public startSampling(): void {
+    this.stopSampling();
+
+    this.samplingIntervalSubscription = this.samplingIntervalSubject.subscribe(() => {
+      console.log('Eventrate: ', this.eventCounter, ' pro Sekunde');
+      this.eventCounter = 0;
+    });
+  }
+
+  public stopSampling(): void {
+    if (this.samplingIntervalSubscription) {
+      this.samplingIntervalSubscription.unsubscribe();
+    }
+
+    this.samplingIntervalSubscription = null;
   }
 
   public async sendClientMessage(message: string): Promise<void> {

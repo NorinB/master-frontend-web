@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, HostListener, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, HostListener, OnDestroy, ViewChild } from '@angular/core';
 import { AppbarService } from '../shared/appbar.service';
 import { BoardService } from '../shared/board/board.service';
 import { UserService } from '../shared/user/user.service';
@@ -26,7 +26,7 @@ import { CanvasService } from '../shared/canvas/canvas.service';
   templateUrl: './board.component.html',
   styleUrl: './board.component.scss',
 })
-export class BoardComponent implements AfterViewInit {
+export class BoardComponent implements AfterViewInit, OnDestroy {
   @ViewChild('canvas') private canvasElement: ElementRef<HTMLCanvasElement>;
 
   constructor(
@@ -66,6 +66,9 @@ export class BoardComponent implements AfterViewInit {
       this.location.back();
     });
   }
+  ngOnDestroy(): void {
+    this.webTransportService.stopSampling();
+  }
 
   ngAfterViewInit(): void {
     this.canvasService.setupCanvas(this.canvasElement.nativeElement);
@@ -91,8 +94,10 @@ export class BoardComponent implements AfterViewInit {
   async initWebTransport(): Promise<void> {
     try {
       await this.webTransportService.initSession(this.boardService.activeBoard()!._id, this.authService.user()!.id);
+      this.webTransportService.startSampling();
       await this.webTransportService.connectToContext(
         (boardEvent) => {
+          this.webTransportService.increaseSamplingCounter();
           try {
             const jsonMessage = JSON.parse(boardEvent);
             switch (jsonMessage.messageType) {
@@ -110,6 +115,7 @@ export class BoardComponent implements AfterViewInit {
           }
         },
         (elementEvent) => {
+          this.webTransportService.increaseSamplingCounter();
           try {
             let messages: { messageType: string; status: string; body: string }[];
             try {
@@ -181,6 +187,7 @@ export class BoardComponent implements AfterViewInit {
           }
         },
         (activeMemberEvent) => {
+          this.webTransportService.increaseSamplingCounter();
           try {
             let messages: { messageType: string; status: string; body: string }[];
             try {
@@ -233,6 +240,7 @@ export class BoardComponent implements AfterViewInit {
           }
         },
         (clientEvent) => {
+          this.webTransportService.increaseSamplingCounter();
           try {
             let messages: { messageType: string; status: string; body: string }[];
             try {
@@ -270,6 +278,7 @@ export class BoardComponent implements AfterViewInit {
       );
     } catch (e) {
       this.snackBar.open('WebTransport closed', 'Ok', defaultSnackbarConfig());
+      this.webTransportService.stopSampling();
     }
   }
 

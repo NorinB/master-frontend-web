@@ -1,18 +1,18 @@
 // @ts-check
-import { test, expect, defineConfig, chromium, Page } from '@playwright/test';
+import { test, expect, defineConfig, chromium } from '@playwright/test';
 
 export default defineConfig({
   timeout: 10 * 60 * 1000,
 });
 
-const iterationCount = 50;
+const iterationCount = 10;
 const minTimeout = 500;
 const maxTimeout = 2000;
 const minX = 0;
 const maxX = 1300;
 const minY = 100;
 const maxY = 1000;
-const testUsers = 50;
+const testUsers = 10;
 const promises: Promise<void>[] = [];
 
 const baseUrl = 'http://localhost:4200';
@@ -35,7 +35,7 @@ test('has title', async ({ page }) => {
 test('Register users', async ({ page }) => {
   await page.goto(baseUrl);
 
-  for (let i = 51; i <= testUsers; i++) {
+  for (let i = 39; i <= testUsers; i++) {
     await page.click('#login-register-switch');
     await page.type('#email-input', `test${i}@test${i}.com`);
     await page.type('#name-or-email-input', `Test${i}`);

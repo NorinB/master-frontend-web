@@ -90,7 +90,7 @@ export class ActiveMemberService {
       const pointerPosition = this.canvasService.canvas()!.getViewportPoint(event.e);
       this.emitNewCursorPosition({ x: pointerPosition.x, y: pointerPosition.y });
     });
-    this.cursorPostionSubscription = this.cursorPositionSubject.pipe(sample(interval(25))).subscribe((cursorPosition) => {
+    this.cursorPostionSubscription = this.cursorPositionSubject.pipe(sample(interval(1))).subscribe((cursorPosition) => {
       try {
         this.webTransportService.sendActiveMemberMessage(
           JSON.stringify(
