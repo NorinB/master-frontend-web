@@ -61,6 +61,11 @@ export class BoardComponent implements AfterViewInit, OnDestroy {
         icon: 'person_add',
         action: this.openAddMemberDialog.bind(this),
       },
+      {
+        buttonId: 'button-start-sampling',
+        icon: 'play_arrow',
+        action: this.startMinuteSampling.bind(this),
+      },
     ]);
     this.appbarService.setBackAction(() => {
       this.location.back();
