@@ -5,7 +5,7 @@ import { WebTransportConnectionHasBeenClosedError, WebTransportConnectionIsClose
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { defaultSnackbarConfig } from '../snackbar-config';
 import { Mutex } from 'async-mutex';
-import { Observable, Subscription, interval } from 'rxjs';
+import { Observable, Subscription, interval, take } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -37,10 +37,16 @@ export class WebTransportService {
     this.stopMinuteSampling();
 
     console.log('=================================START SAMPLING=================================');
-    this.minuteSamplingIntervalSubcription = this.minuteSamplingIntervalSubject.subscribe(() => {
-      const average = this.samples.reduce((prev, current) => prev + current, 0);
+    this.minuteSamplingIntervalSubcription = this.minuteSamplingIntervalSubject.pipe(take(1)).subscribe(() => {
+      const average = this.samples.reduce((prev, current) => prev + current, 0) / this.samples.length;
       console.log(`RESULT: ${average} Events die Sekunde in Zeitspanne einer Minute`);
+      console.log(`Events recorded: ${this.samples.length}`);
       console.log('=================================STOP SAMPLING=================================');
+      let sampleCSV = 'Events\n';
+      this.samples.forEach((sample) => {
+        sampleCSV += `${sample}\n`;
+      });
+      console.log(sampleCSV);
       this.samples = [];
     });
   }
