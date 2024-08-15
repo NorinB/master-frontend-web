@@ -66,8 +66,16 @@ export class BoardComponent implements AfterViewInit, OnDestroy {
       this.location.back();
     });
   }
+
+  public startMinuteSampling(): void {
+    console.log('Starte Sampling von einer Minute in 3 Sekunden...');
+    setTimeout(() => {
+      this.webTransportService.startMinuteSampling();
+    }, 3000);
+  }
+
   ngOnDestroy(): void {
-    this.webTransportService.stopSampling();
+    this.webTransportService.stopSecondSampling();
   }
 
   ngAfterViewInit(): void {
@@ -94,7 +102,7 @@ export class BoardComponent implements AfterViewInit, OnDestroy {
   async initWebTransport(): Promise<void> {
     try {
       await this.webTransportService.initSession(this.boardService.activeBoard()!._id, this.authService.user()!.id);
-      this.webTransportService.startSampling();
+      this.webTransportService.startSecondSampling();
       await this.webTransportService.connectToContext(
         (boardEvent) => {
           this.webTransportService.increaseSamplingCounter();
@@ -278,7 +286,7 @@ export class BoardComponent implements AfterViewInit, OnDestroy {
       );
     } catch (e) {
       this.snackBar.open('WebTransport closed', 'Ok', defaultSnackbarConfig());
-      this.webTransportService.stopSampling();
+      this.webTransportService.stopSecondSampling();
     }
   }
 

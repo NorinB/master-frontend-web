@@ -23,8 +23,52 @@ export class WebTransportService {
   private clientSendStream: WebTransportSendStream | null = null;
 
   private eventCounter = 0;
-  private samplingIntervalSubject: Observable<number> = interval(1000);
-  private samplingIntervalSubscription: Subscription | null = null;
+  private minuteSamplingIntervalSubject: Observable<number> = interval(60000);
+  private minuteSamplingIntervalSubcription: Subscription | null = null;
+  private secondSamplingIntervalSubject: Observable<number> = interval(1000);
+  private secondSamplingIntervalSubscription: Subscription | null = null;
+  private samples: number[] = [];
+
+  public increaseSamplingCounter(): void {
+    this.eventCounter++;
+  }
+
+  public startMinuteSampling(): void {
+    this.stopMinuteSampling();
+
+    console.log('=================================START SAMPLING=================================');
+    this.minuteSamplingIntervalSubcription = this.minuteSamplingIntervalSubject.subscribe(() => {
+      const average = this.samples.reduce((prev, current) => prev + current, 0);
+      console.log(`RESULT: ${average} Events die Sekunde in Zeitspanne einer Minute`);
+      console.log('=================================STOP SAMPLING=================================');
+      this.samples = [];
+    });
+  }
+
+  public stopMinuteSampling(): void {
+    if (this.minuteSamplingIntervalSubcription) {
+      this.minuteSamplingIntervalSubcription.unsubscribe();
+    }
+    this.minuteSamplingIntervalSubcription = null;
+  }
+
+  public startSecondSampling(): void {
+    this.stopSecondSampling();
+
+    this.secondSamplingIntervalSubscription = this.secondSamplingIntervalSubject.subscribe(() => {
+      console.log('Eventrate: ', this.eventCounter, ' pro Sekunde');
+      this.samples.push(this.eventCounter);
+      this.eventCounter = 0;
+    });
+  }
+
+  public stopSecondSampling(): void {
+    if (this.secondSamplingIntervalSubscription) {
+      this.secondSamplingIntervalSubscription.unsubscribe();
+    }
+
+    this.secondSamplingIntervalSubscription = null;
+  }
 
   constructor(private snackBar: MatSnackBar) {}
 
@@ -106,27 +150,6 @@ export class WebTransportService {
       this.snackBar.open(error.message, 'Ok', defaultSnackbarConfig());
       throw new WebTransportConnectionIsClosedError();
     }
-  }
-
-  public increaseSamplingCounter(): void {
-    this.eventCounter++;
-  }
-
-  public startSampling(): void {
-    this.stopSampling();
-
-    this.samplingIntervalSubscription = this.samplingIntervalSubject.subscribe(() => {
-      console.log('Eventrate: ', this.eventCounter, ' pro Sekunde');
-      this.eventCounter = 0;
-    });
-  }
-
-  public stopSampling(): void {
-    if (this.samplingIntervalSubscription) {
-      this.samplingIntervalSubscription.unsubscribe();
-    }
-
-    this.samplingIntervalSubscription = null;
   }
 
   public async sendClientMessage(message: string): Promise<void> {
