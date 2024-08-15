@@ -73,7 +73,7 @@ export class BoardComponent implements AfterViewInit, OnDestroy {
   }
 
   public startMinuteSampling(): void {
-    console.log('Starte Sampling von einer Minute in 3 Sekunden...');
+    console.log('Starte Sampling von einer Minute in 5 Sekunden...');
     setTimeout(() => {
       this.webTransportService.startMinuteSampling();
     }, 5000);
