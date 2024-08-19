@@ -33,8 +33,13 @@ export class WebTransportService {
     this.eventCounter++;
   }
 
+  private addToSamples(sample: number): void {
+    this.samples.push(sample);
+  }
+
   public startMinuteSampling(): void {
     this.stopMinuteSampling();
+    this.samples = [];
 
     console.log('=================================START SAMPLING=================================');
     this.minuteSamplingIntervalSubcription = this.minuteSamplingIntervalSubject.pipe(take(1)).subscribe(() => {
@@ -60,10 +65,12 @@ export class WebTransportService {
 
   public startSecondSampling(): void {
     this.stopSecondSampling();
+    this.samples = [];
 
     this.secondSamplingIntervalSubscription = this.secondSamplingIntervalSubject.subscribe(() => {
-      console.log('Eventrate: ', this.eventCounter, ' pro Sekunde');
-      this.samples.push(this.eventCounter);
+      const currentCounter = this.eventCounter;
+      console.log('Eventrate: ', currentCounter, ' pro Sekunde. Samplecount: ', this.samples.length);
+      this.addToSamples(currentCounter);
       this.eventCounter = 0;
     });
   }
@@ -83,12 +90,15 @@ export class WebTransportService {
       await this.closeConnection();
     }
     const certificateBytes = await this.getCertificateBytes();
+    const start = new Date();
     this.webTransportClient = new WebTransportClient(this.webTransportUrl, certificateBytes);
     await this.webTransportClient.init_session();
     this.boardSendStream = await this.webTransportClient.setup_connection('board', boardId);
     this.elementSendStream = await this.webTransportClient.setup_connection('element', boardId);
     this.activeMemberSendStream = await this.webTransportClient.setup_connection('active_member', boardId);
     this.clientSendStream = await this.webTransportClient.setup_connection('client', userId);
+    const end = new Date();
+    console.log('Ellapsed Time for WebTransport: ', end.getMilliseconds() - start.getMilliseconds(), ' ms');
     this.webTransportTransport = await this.webTransportClient.get_transport();
   }
 
