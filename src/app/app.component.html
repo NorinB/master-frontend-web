@@ -5,6 +5,7 @@
     </button>
   }
   <span class="appbar-title">{{ appbarService.title() }}</span>
+  <span class="appbar-subtitle">{{ appbarService.subtitle() }}</span>
   <span class="spacer"></span>
   <!-- TODO: add member list here, maybe with ng-template-->
   @for (action of appbarService.actions(); track $index) {

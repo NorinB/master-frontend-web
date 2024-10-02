@@ -44,7 +44,8 @@ export class BoardComponent implements AfterViewInit, OnDestroy {
     private dialog: MatDialog,
     private router: Router,
   ) {
-    this.appbarService.updateTitle('Board');
+    this.appbarService.updateTitle('Board:');
+    this.appbarService.updateSubtitle(boardService.activeBoard()!.name);
     this.appbarService.setActions([
       {
         buttonId: 'button-refresh',
