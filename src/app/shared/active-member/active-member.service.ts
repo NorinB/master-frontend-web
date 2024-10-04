@@ -1,5 +1,5 @@
 import { Injectable, WritableSignal, signal } from '@angular/core';
-import { ActiveMember, CursorPosition } from './active-member.model';
+import { ActiveMemberWithName, CursorPosition } from './active-member.model';
 import { Board } from '../board/board.model';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { BoardService } from '../board/board.service';
@@ -9,7 +9,7 @@ import { UnexpectedApiError } from '../general.error';
 import { environment } from '../../../environments/environment';
 import { ActiveMemberNotFoundError, BoardHasNoActiveMembersError } from './active-member.error';
 import { AuthService } from '../auth/auth.service';
-import { NotLoggedInError } from '../auth/auth.error';
+import { NotLoggedInError, UserNotFoundError } from '../auth/auth.error';
 import { Subject, Subscription, interval, sample } from 'rxjs';
 import { WebTransportService } from '../webtransport/webtransport.service';
 import { WebTransportMessage } from '../webtransport/webtransport.dto';
@@ -21,16 +21,17 @@ import {
 } from './active-member.dto';
 import { CanvasService } from '../canvas/canvas.service';
 import { FabricObject } from 'fabric';
+import { User } from '../user/user.model';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ActiveMemberService {
   private apiBaseUrl = environment.apiBaseUrl;
-  public activeMember: WritableSignal<ActiveMember | null> = signal(null);
-  public currentActiveMembers: Map<string, { member: ActiveMember; canvasElement: FabricObject }> = new Map<
+  public activeMember: WritableSignal<ActiveMemberWithName | null> = signal(null);
+  public currentActiveMembers: Map<string, { member: ActiveMemberWithName; canvasElement: FabricObject }> = new Map<
     string,
-    { member: ActiveMember; canvasElement: FabricObject }
+    { member: ActiveMemberWithName; canvasElement: FabricObject }
   >();
   private cursorPositionSubject = new Subject<CursorPosition>();
   private cursorPostionSubscription: Subscription | null = null;
@@ -52,7 +53,7 @@ export class ActiveMemberService {
         throw new NotLoggedInError();
       }
       const response = await this.http
-        .get<ActiveMember[]>(`${this.apiBaseUrl}/active-member/board/${this.boardService.activeBoard()?._id}`, { observe: 'response' })
+        .get<ActiveMemberWithName[]>(`${this.apiBaseUrl}/active-member/board/${this.boardService.activeBoard()?._id}`, { observe: 'response' })
         .toPromise();
       for (const member of this.currentActiveMembers.values()) {
         this.canvasService.removeElement(member.canvasElement);
@@ -62,7 +63,7 @@ export class ActiveMemberService {
         if (activeMember.userId === this.authService.user()!.id) {
           continue;
         }
-        const canvasElement = this.canvasService.addActiveMember(activeMember.x, activeMember.y);
+        const canvasElement = this.canvasService.addActiveMember(activeMember.x, activeMember.y, activeMember.name!);
         this.currentActiveMembers.set(activeMember.userId, { member: activeMember, canvasElement: canvasElement });
       }
       this.canvasService.refresh();
@@ -111,9 +112,16 @@ export class ActiveMemberService {
     });
   }
 
-  public addActiveMemberByEvent(message: ActiveMemberAddEventMessage): void {
+  public async addActiveMemberByEvent(message: ActiveMemberAddEventMessage): Promise<void> {
     this.canvasService.isReady();
-    const element = this.canvasService.addActiveMember(0, 0);
+    const response = (await this.http.get<User>(`${this.apiBaseUrl}/user/${message.userId}`, { observe: 'response' }).toPromise())!;
+    if (response.status === StatusCodes.NOT_FOUND) {
+      throw new UserNotFoundError();
+    } else if (response.status === StatusCodes.INTERNAL_SERVER_ERROR) {
+      throw new UnexpectedApiError();
+    }
+    const name = response.body!.name;
+    const element = this.canvasService.addActiveMember(0, 0, name);
     this.currentActiveMembers.set(message.userId, {
       member: { userId: message.userId, boardId: message.boardId, _id: message._id, x: 0, y: 0 },
       canvasElement: element,

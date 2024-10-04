@@ -41,9 +41,10 @@ export class CanvasService {
     this.canvas()?.moveObjectTo(element, value);
   }
 
-  public addActiveMember(x: number, y: number): FabricObject {
+  public addActiveMember(x: number, y: number, name: string): FabricObject {
     this.isReady();
     const cursorPath = 'M 0 0 L 5 5 L 3 5 L 2 7 Z';
+    // TODO: hier noch den Namen adden
     const cursor = new Path(cursorPath, { left: x, top: y, fill: getRandomColor() });
     cursor.scale(3);
     this.canvas()!.add(cursor);
