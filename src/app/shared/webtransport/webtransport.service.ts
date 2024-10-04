@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, WritableSignal, signal } from '@angular/core';
 import { WebTransportClient, WebTransportSendStream, WebTransportTransport } from 'wasm-webtransport';
 import { environment } from '../../../environments/environment';
 import { WebTransportConnectionHasBeenClosedError, WebTransportConnectionIsClosedError, WebTransportNotInitializedError } from './webtransport.error';
@@ -22,15 +22,16 @@ export class WebTransportService {
   private activeMemberSendStreamMutex = new Mutex();
   private clientSendStream: WebTransportSendStream | null = null;
 
-  private eventCounter = 0;
+  private eventCounter: WritableSignal<number> = signal(0);
+  public eventsPerSecond: WritableSignal<number> = signal(0);
   private minuteSamplingIntervalSubject: Observable<number> = interval(60000);
   private minuteSamplingIntervalSubcription: Subscription | null = null;
   private secondSamplingIntervalSubject: Observable<number> = interval(1000);
-  private secondSamplingIntervalSubscription: Subscription | null = null;
+  public secondSamplingIntervalSubscription: Subscription | null = null;
   private samples: number[] = [];
 
   public increaseSamplingCounter(): void {
-    this.eventCounter++;
+    this.eventCounter.update((value) => value + 1);
   }
 
   private addToSamples(sample: number): void {
@@ -68,10 +69,11 @@ export class WebTransportService {
     this.samples = [];
 
     this.secondSamplingIntervalSubscription = this.secondSamplingIntervalSubject.subscribe(() => {
-      const currentCounter = this.eventCounter;
+      const currentCounter = this.eventCounter();
+      this.eventCounter.set(0);
+      this.eventsPerSecond.set(currentCounter);
       console.log('Eventrate: ', currentCounter, ' pro Sekunde. Samplecount: ', this.samples.length);
       this.addToSamples(currentCounter);
-      this.eventCounter = 0;
     });
   }
 
@@ -81,6 +83,7 @@ export class WebTransportService {
     }
 
     this.secondSamplingIntervalSubscription = null;
+    this.eventsPerSecond.set(0);
   }
 
   constructor(private snackBar: MatSnackBar) {}

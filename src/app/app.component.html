@@ -8,6 +8,12 @@
   <span class="appbar-subtitle">{{ appbarService.subtitle() }}</span>
   <span class="spacer"></span>
   <!-- TODO: add member list here, maybe with ng-template-->
+  @if (showEventsPerSecond && webTransportService.secondSamplingIntervalSubscription) {
+    <span class="appbar-events-per-second"> {{ webTransportService.eventsPerSecond() }} eps </span>
+  }
+  @if (sliderIsActive) {
+    <mat-slide-toggle [(ngModel)]="showEventsPerSecond">Show events per second</mat-slide-toggle>
+  }
   @for (action of appbarService.actions(); track $index) {
     <button [id]="action.buttonId" mat-icon-button (click)="action.action()">
       <mat-icon>{{ action.icon }}</mat-icon>
