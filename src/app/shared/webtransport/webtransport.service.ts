@@ -72,7 +72,7 @@ export class WebTransportService {
       const currentCounter = this.eventCounter();
       this.eventCounter.set(0);
       this.eventsPerSecond.set(currentCounter);
-      console.log('Eventrate: ', currentCounter, ' pro Sekunde. Samplecount: ', this.samples.length);
+      // console.log('Eventrate: ', currentCounter, ' pro Sekunde. Samplecount: ', this.samples.length);
       this.addToSamples(currentCounter);
     });
   }
