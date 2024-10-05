@@ -1,5 +1,5 @@
 import { Injectable, WritableSignal, signal } from '@angular/core';
-import { Canvas, FabricObject, Path } from 'fabric';
+import { Canvas, FabricObject, Group, Path, Text } from 'fabric';
 import { CanvasNotReadyError } from './canvas.error';
 import { getRandomColor } from '../element/element.model';
 
@@ -45,11 +45,14 @@ export class CanvasService {
     this.isReady();
     const cursorPath = 'M 0 0 L 5 5 L 3 5 L 2 7 Z';
     // TODO: hier noch den Namen adden
-    const cursor = new Path(cursorPath, { left: x, top: y, fill: getRandomColor() });
+    const color = getRandomColor();
+    const cursor = new Path(cursorPath, { fill: color, selectable: false, originX: 'right', originY: 'bottom' });
     cursor.scale(3);
-    this.canvas()!.add(cursor);
-    this.canvas()!.bringObjectToFront(cursor);
-    return cursor;
+    const text = new Text(name, { fontSize: 16, originX: 'left', originY: 'top', selectable: false, fill: color });
+    const group = new Group([cursor, text], { selectable: false, left: x, top: y });
+    this.canvas()!.add(group);
+    this.canvas()!.bringObjectToFront(group);
+    return group;
   }
 
   public setupCanvas(canvasElement: HTMLCanvasElement): void {
