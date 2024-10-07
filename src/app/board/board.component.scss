@@ -20,11 +20,20 @@
   left: 0;
   right: 0;
   margin: auto;
+  overflow-x: auto;
+  white-space: nowrap;
+  padding: 10px;
   display: flex;
-  align-items: center;
   justify-content: center;
+}
+
+.inner-container {
+  display: inline-flex;
 }
 
 .element-button {
   margin: 5px;
+  min-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
