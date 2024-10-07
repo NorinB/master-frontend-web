@@ -51,6 +51,7 @@ export class BoardComponent implements AfterViewInit, OnDestroy {
         buttonId: 'button-refresh',
         icon: 'refresh',
         action: async () => {
+          await this.elementService.getCreatableElements();
           await this.elementService.loadExistingElements();
           await this.elementService.unlockAllElements();
           await this.activeMemberService.loadExistingActiveMembers();
